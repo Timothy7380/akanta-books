@@ -1050,8 +1050,9 @@ function sampleClients() {
 }
 
 function freshDB() {
-  const clients = sampleClients();
-  return { v: 2, user: 'Timothy', role: 'partner', active: clients[0].id, clients, theme: null, ui: {} };
+  const c = blankClient({ name: 'Geoinfotech Holdings', industry: 'Geospatial, surveying & GIS services', city: 'Lagos', bankName: 'Main bank account', startMonth: TODAY.slice(0, 7) });
+  c.profiles = [{ id: uid('p'), name: 'Geoinfotech Holdings', tagline: 'Geospatial · Surveying · GIS solutions', address: 'Lagos, Nigeria', email: '', phone: '', tin: '', bank: 'Add your bank details in Settings → Invoice businesses', prefix: 'GIH', color: '#0f5c4d', logo: null }];
+  return { v: 3, user: 'Timothy', role: 'partner', active: c.id, clients: [c], theme: null, ui: {} };
 }
 
 function freshRealDB(opening, start, keep) {
@@ -1259,6 +1260,7 @@ VIEWS.overview = () => {
   });
   return `
   ${ph(`Overview`, `${esc(c.name)} · ${P.label}`, `${seg('ovPeriod', UI.ovPeriod, [['month', 'This month'], ['lastmonth', 'Last month'], ['quarter', 'Quarter'], ['ytd', 'Year to date']])}<button class="btn pri" data-act="upload">${ic('upload', 15)} Upload statement</button>`)}
+  ${!c.journals.some(j => j.source !== 'opening') ? `<div class="card"><div class="card-h"><div><h3>Welcome to the ${esc(c.name)} books</h3><div class="sub">The books are empty. Four steps to get real figures on this page:</div></div></div><div class="card-b"><div class="list">${[['upload', 'Upload bank statements', 'PDF, Excel or CSV from internet banking. Start with the earliest month you want to track.', 'upload'], ['settings', 'Add company details', 'TIN, address and bank account, so they appear on invoices and reports.', 'nav" data-r="settings'], ['users', 'Add staff', 'Enter each employee once; payroll and PAYE are then worked out every month.', 'nav" data-r="payroll'], ['invoice', 'Create an invoice', 'Bill a customer. VAT and WHT are calculated for you.', 'new-invoice']].map(([icn, t, d, act], i) => `<div class="li"><span class="tag">${i + 1}</span><div class="grow"><b style="font-weight:500">${t}</b><small>${d}</small></div><button class="btn sm ${i ? '' : 'pri'}" data-act="${act}">${ic(icn, 14)} ${t.split(' ')[0]}</button></div>`).join('')}</div></div></div>` : ''}
   ${c.sample ? `<div class="callout"><span class="ic">${ic('info', 18)}</span><div style="flex:1;min-width:0"><b>You're looking at example figures</b><p>These numbers show how the app works. They are not the real accounts of ${esc(c.name)}. When you're ready, clear them and upload your real bank statements.</p></div><button class="btn sm" data-act="start-fresh">Start with real books</button></div>` : ''}
   ${hot.length && !isClient ? `<div class="callout ${hot.some(o => o.state === 'overdue') ? 'bad' : 'warn'}"><span class="ic">${ic('alert', 18)}</span><div style="flex:1;min-width:0"><b>${hot.filter(o => o.state === 'overdue').length ? `${hot.filter(o => o.state === 'overdue').length} remittance overdue` : 'Remittances due soon'}</b><p>${hot.slice(0, 3).map(o => `${o.type} ${o.periodLabel} – ${o.state === 'overdue' ? `overdue since ${dLabel(o.due)}` : `due ${dLabel(o.due)} (${o.days === 0 ? 'today' : o.days + ' day' + (o.days > 1 ? 's' : '')})`}, ${money0(o.amount)}`).join(' · ')}</p></div><button class="btn sm" data-act="nav" data-r="tax">Open tax centre</button></div>` : ''}
   <div class="kpis">
@@ -1274,7 +1276,7 @@ VIEWS.overview = () => {
         <div class="lg"><span><i style="background:var(--c-in)"></i>Money in</span><small>${money0(sIn)}</small></div>
         <div class="lg"><span><i style="background:var(--c-out)"></i>Money out</span><small>${money0(sOut)}</small></div>
         <div class="lg"><span><i style="background:var(--c-3)"></i>${sIn - sOut >= 0 ? 'Profit' : 'Loss'}</span><small>${money0(sIn - sOut)}</small></div>
-        <div class="lg"><span><i style="background:var(--c-4)"></i>Best ${UI.trend === 'daily' ? 'day' : UI.trend.replace('ly', '')}</span><small>${(() => { const i = S.net.indexOf(Math.max(...S.net)); return `${S.labels[i]} · ${short(S.net[i])}`; })()}</small></div>
+        <div class="lg"><span><i style="background:var(--c-4)"></i>Best ${UI.trend === 'daily' ? 'day' : UI.trend.replace('ly', '')}</span><small>${(() => { const mx = Math.max(...S.net); if (mx <= 0) return '—'; const i = S.net.indexOf(mx); return `${S.labels[i]} · ${short(S.net[i])}`; })()}</small></div>
       </div>
       <div class="chartbox"><canvas id="trendChart" aria-label="Income and expenses chart" role="img"></canvas></div>
     </div>
@@ -1501,6 +1503,7 @@ ACT['imp-go'] = () => {
   }
   c.bank.sort((a, b) => a.date.localeCompare(b.date));
   c.imports.push({ id: impId, name: imp.name, at: TODAY, rows: added.length, by: userName() });
+  if (c.bank.length && mKey(c.bank[0].date) < c.startMonth) c.startMonth = mKey(c.bank[0].date);
   audit('Imported bank statement', imp.name, `${added.length} new lines`);
   const r = DB.role === 'client' ? { total: added.length, rule: 0, inv: 0, led: 0, locked: 0 } : runAutomation(c, added);
   UI.imp = null; UI.bankTab = DB.role === 'client' ? 'import' : 'txns'; UI.bankFilter = 'review'; render();
@@ -2237,7 +2240,7 @@ function payPreview(c) {
   const pv = UI.payPreview; const k = pv.month; const date = pv.date || `${k}-${pad(Math.min(27, s2d(mEnd(k)).getDate()))}`;
   const emps = c.employees.filter(e => e.active !== false); const rows = emps.map(e => ({ e, ...calcPay(c, e) })); const T = key => r2(rows.reduce((s, x) => s + x[key], 0));
   const exists = c.payruns.some(r => r.month === k);
-  const months = []; for (let m = c.startMonth; m <= mPrev(mKey(TODAY), -1); m = mPrev(m, -1)) if (!c.payruns.some(r => r.month === m)) months.push(m);
+  const months = []; for (let m = [c.startMonth, TODAY.slice(0, 4) + '-01'].sort()[0]; m <= mPrev(mKey(TODAY), -1); m = mPrev(m, -1)) if (!c.payruns.some(r => r.month === m)) months.push(m);
   return `<div class="card"><div class="toolbar"><div class="l"><label class="lbl" for="prMonth">Pay month</label><select class="in sm" style="width:auto" id="prMonth" data-ch="pr-month">${months.map(m => `<option value="${m}" ${m === k ? 'selected' : ''}>${mLabel(m, true)}</option>`).join('')}</select><label class="lbl" for="prDate">Payment date</label><input type="date" class="in sm" style="width:auto" id="prDate" data-ch="pr-date" value="${date}"></div><div class="rt"><button class="btn sm" data-act="seg" data-name="payTab" data-v="employees">Cancel</button><button class="btn sm pri" data-act="post-payroll" ${exists ? 'disabled' : ''}>Approve & post ${mLabel(k)}</button></div></div>
   <div class="tbl-wrap"><table class="t"><thead><tr><th>Employee</th><th class="r">Gross</th><th class="r">Pension (8%)</th><th class="r">PAYE</th><th class="r">Net pay</th><th class="r">Employer pension (10%)</th></tr></thead><tbody>
   ${rows.map(x => `<tr><td>${partyCell(x.e.name, x.e.role)}</td><td class="r">${money(x.gross)}</td><td class="r">${money(x.pen)}</td><td class="r">${money(x.paye)}</td><td class="r"><b>${money(x.net)}</b></td><td class="r">${money(x.penEr)}</td></tr>`).join('')}
@@ -2248,7 +2251,7 @@ CH['pr-month'] = el => { UI.payPreview.month = el.value; UI.payPreview.date = nu
 CH['pr-date'] = el => { UI.payPreview.date = el.value; render(); };
 ACT['post-payroll'] = () => {
   if (!guard('payroll.post', 'approve payroll')) return; const c = C(); const pv = UI.payPreview; const date = pv.date || `${pv.month}-${pad(Math.min(27, s2d(mEnd(pv.month)).getDate()))}`;
-  attempt(() => { const run = postPayroll(c, pv.month, date); audit('Approved payroll', mLabel(pv.month, true), `${run.rows.length} staff · net ${money(run.totals.net)}`); UI.payPreview = null; UI.payTab = 'runs'; toast(`Payroll for ${mLabel(pv.month, true)} posted`); render(); });
+  attempt(() => { const run = postPayroll(c, pv.month, date); if (pv.month < c.startMonth) c.startMonth = pv.month; audit('Approved payroll', mLabel(pv.month, true), `${run.rows.length} staff · net ${money(run.totals.net)}`); UI.payPreview = null; UI.payTab = 'runs'; toast(`Payroll for ${mLabel(pv.month, true)} posted`); render(); });
 };
 ACT['view-run'] = el => {
   const c = C(); const r = c.payruns.find(x => x.month === el.dataset.m);
@@ -2388,7 +2391,7 @@ VIEWS.settings = () => {
   else body = `<div class="card"><div class="card-b" style="display:flex;flex-direction:column;gap:14px;max-width:640px">
     <div class="field"><label for="uName">Your name (shown on the audit trail and reports)</label><input class="in" id="uName" value="${esc(userName())}" style="max-width:320px"></div><div><button class="btn" data-act="save-user">Save name</button></div>
     <div class="callout"><span class="ic">${ic('info', 18)}</span><div><b>Where your data lives</b><p>This version keeps all books in this browser on this device. Clearing browser data removes them. For shared, multi-user access the next step is a hosted database with sign-in.</p></div></div>
-    <div class="row">${C().sample ? '<button class="btn pri" data-act="start-fresh">Clear examples & start with real books</button>' : ''}<button class="btn danger" data-act="reset-all">Load example data again</button></div></div></div>`;
+    <div class="row">${C().sample ? '<button class="btn pri" data-act="start-fresh">Clear examples & start with real books</button>' : ''}<button class="btn danger" data-act="reset-all">Clear all data and start again</button></div></div></div>`;
   return `${ph('Settings', esc(c.name), '')}${tabs('setTab', t, [['company', 'Company'], ['profiles', 'Invoice businesses'], ['tax', 'Tax & deadlines'], ['lock', 'Period lock'], ['data', 'Account & data']])}${body}`;
 };
 ACT['save-company'] = () => { if (!guard('settings', 'change company settings')) return; const c = C(); Object.assign(c, { name: $('#sName').value.trim() || c.name, industry: $('#sInd').value.trim(), tin: $('#sTin').value.trim(), rc: $('#sRc').value.trim(), address: $('#sAddr').value.trim(), city: $('#sCity').value.trim(), email: $('#sEmail').value.trim(), phone: $('#sPhone').value.trim(), bankName: $('#sBank').value.trim() }); audit('Edited company details', c.name, ''); toast('Saved'); render(); };
@@ -2399,8 +2402,8 @@ ACT['reset-tax'] = () => { if (!guard('settings', 'change tax settings')) return
 ACT['save-lock'] = () => { if (!guard('lock', 'change the period lock')) return; const c = C(); const d = $('#lkDate').value; if (!d) return toast('Pick a date', true); const old = c.lockDate; c.lockDate = d; audit('Locked period', 'Books', `${old ? dLabel(old) : 'none'} → ${dLabel(d)}`); toast('Books locked through ' + dLabel(d)); render(); };
 ACT['clear-lock'] = () => { if (!guard('lock', 'change the period lock')) return; const c = C(); audit('Removed period lock', 'Books', 'was ' + dLabel(c.lockDate)); c.lockDate = null; toast('Lock removed'); render(); };
 ACT['save-user'] = () => { const v = $('#uName').value.trim(); if (!v) return; DB.user = v; toast('Saved'); render(); };
-ACT['reset-all'] = () => { if (!guard('reset', 'reset data')) return; modal({ title: 'Reset everything?', body: '<p style="margin:0">All entries and settings in this browser are replaced with the example figures. This cannot be undone.</p>', foot: `<button class="btn" data-act="close-modal">Cancel</button><button class="btn pri" data-act="reset-go">Reset</button>` }); };
-ACT['reset-go'] = () => { const theme = DB.theme; DB = freshDB(); DB.theme = theme; invalidate(); closeModal(); UI.imp = null; UI.draft = null; toast('Example data restored'); go('overview'); };
+ACT['reset-all'] = () => { if (!guard('reset', 'reset data')) return; modal({ title: 'Reset everything?', body: '<p style="margin:0">Every transaction, invoice, employee and setting saved in this browser is deleted and the books start empty. This cannot be undone.</p>', foot: `<button class="btn" data-act="close-modal">Cancel</button><button class="btn pri" data-act="reset-go">Reset</button>` }); };
+ACT['reset-go'] = () => { const theme = DB.theme; DB = freshDB(); DB.theme = theme; invalidate(); closeModal(); UI.imp = null; UI.draft = null; toast('All data cleared'); go('overview'); };
 
 ACT['start-fresh'] = () => {
   const c = C();
@@ -2414,7 +2417,7 @@ ACT['start-fresh'] = () => {
 /* ================= Boot ================= */
 (function boot() {
   DB = loadDB();
-  if (!DB || !DB.clients?.length || DB.v !== 2) DB = freshDB();
+  if (!DB || !DB.clients?.length || DB.clients.some(c => c.sample)) DB = freshDB(); DB.v = 3;
   applyTheme();
   matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => { if (!DB.theme) render(); });
   render();
