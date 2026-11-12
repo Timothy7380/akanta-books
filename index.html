@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="Akanta Books – accounting workspace for Geoinfotech Holdings">
+<meta name="description" content="Akanta Books – books, payroll and tax for Nigerian businesses">
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
 <body>
@@ -340,6 +340,53 @@ img.pv-logo{object-fit:contain;background:none;border-radius:0}
   .chartbox{height:240px}
 }
 @media (max-width:420px){ .kpis{grid-template-columns:minmax(0,1fr)} }
+/* ---------- Sign in / sign up ---------- */
+html:not(.signed) .app{display:none}
+html.signed #auth{display:none}
+.auth{min-height:100vh;min-height:100dvh;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);background:var(--canvas)}
+.auth-brand{position:relative;overflow:hidden;background:#0f1a17;color:#eef4f1;padding:44px 48px;display:flex;flex-direction:column;justify-content:space-between;gap:32px}
+.auth-brand:before{content:"";position:absolute;inset:-30% -20% auto auto;width:520px;height:520px;border-radius:50%;background:radial-gradient(closest-side,rgba(64,190,140,.28),transparent);pointer-events:none}
+.auth-brand .lg{display:flex;align-items:center;gap:12px;font-weight:650;font-size:17px;letter-spacing:-.01em;position:relative}
+.auth-brand .lg img{width:34px;height:auto}
+.auth-brand h2{font-size:clamp(26px,3vw,36px);line-height:1.15;letter-spacing:-.02em;margin:0 0 14px;font-weight:650;max-width:15em;position:relative}
+.auth-brand p{color:#b9cbc3;margin:0;max-width:32em;line-height:1.55;position:relative}
+.auth-brand ul{list-style:none;padding:0;margin:26px 0 0;display:grid;gap:12px;position:relative}
+.auth-brand li{display:flex;gap:10px;align-items:flex-start;color:#d9e6e0;font-size:14px}
+.auth-brand li svg{flex:none;margin-top:2px;color:#5fd3a5}
+.auth-brand small{color:#8aa39a;position:relative}
+.auth-main{display:flex;align-items:center;justify-content:center;padding:40px 24px}
+.auth-card{width:100%;max-width:400px;display:flex;flex-direction:column;gap:16px}
+.auth-card .mlogo{display:none;align-items:center;gap:10px;font-weight:650;font-size:16px}
+.auth-card .mlogo img{width:30px;height:auto}
+.auth-card h1{font-size:26px;letter-spacing:-.02em;margin:0;font-weight:650}
+.auth-card .sub{color:var(--ink-3);margin:-8px 0 4px;font-size:14px;line-height:1.5}
+.auth-card .in{height:44px;font-size:14.5px;border-radius:10px}
+.auth-card .in:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.auth-card .field label{font-size:12.5px;color:var(--ink-2)}
+.auth-card .btn{height:44px;justify-content:center;font-size:14.5px;width:100%}
+.pw{position:relative}
+.pw .in{padding-right:46px}
+.pw .eye{position:absolute;right:4px;top:4px;width:36px;height:36px;border:0;background:none;color:var(--ink-3);border-radius:8px;display:grid;place-items:center;cursor:pointer}
+.pw .eye:hover{color:var(--ink);background:var(--surface-2)}
+.auth-row{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px}
+.linkbtn{border:0;background:none;padding:0;color:var(--accent-ink);font-weight:550;cursor:pointer;font-size:inherit}
+.linkbtn:hover{text-decoration:underline}
+.auth-or{display:flex;align-items:center;gap:12px;color:var(--ink-3);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+.auth-or:before,.auth-or:after{content:"";flex:1;height:1px;background:var(--line)}
+.gbtn{background:var(--surface)!important;color:var(--ink)!important;border:1px solid var(--line)!important;gap:10px!important}
+.gbtn:hover{background:var(--surface-2)!important}
+.auth-msg{border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.45}
+.auth-msg.err{background:var(--bad-soft);color:var(--bad)}
+.auth-msg.ok{background:var(--good-soft);color:var(--good)}
+.auth-foot{text-align:center;font-size:13.5px;color:var(--ink-3)}
+.pw-meter{height:4px;border-radius:4px;background:var(--surface-3);overflow:hidden;margin-top:6px}
+.pw-meter i{display:block;height:100%;width:0;transition:width .2s,background .2s}
+.pw-hint{font-size:12px;color:var(--ink-3);margin-top:4px}
+.auth-load{display:flex;flex-direction:column;align-items:center;gap:14px;color:var(--ink-3);font-size:14px}
+.spin{width:28px;height:28px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--accent);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.btn[disabled]{opacity:.6;cursor:progress}
+@media (max-width:900px){.auth{grid-template-columns:minmax(0,1fr)}.auth-brand{display:none}.auth-card .mlogo{display:flex}.auth-main{align-items:flex-start;padding-top:48px}}
 </style>
 
 <div class="app">
@@ -369,6 +416,7 @@ img.pv-logo{object-fit:contain;background:none;border-radius:0}
     <div class="content" id="content"><div class="wrap" id="view"></div></div>
   </main>
 </div>
+<div id="auth" class="auth" aria-live="polite"></div>
 <div id="modal-root"></div>
 <div id="toast" aria-live="polite"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -450,6 +498,9 @@ const IC = {
   more: 'M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm7 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM5 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2z',
   trash: 'M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14',
   eye: 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12zm11 3a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',
+  eyeoff: 'M3 3l18 18M10.6 5.1A10.9 10.9 0 0 1 12 5c7 0 11 7 11 7a18.6 18.6 0 0 1-3.2 4.1M6.6 6.6C3.4 8.6 1 12 1 12s4 7 11 7a10.6 10.6 0 0 0 5.4-1.5M9.9 9.9a3 3 0 0 0 4.2 4.2',
+  logout: 'M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l-5-5 5-5M5 12h11',
+  cloud: 'M7 18a5 5 0 0 1-.6-9.96A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9H7z',
   refresh: 'M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15',
   wallet: 'M21 12V7H5a2 2 0 0 1 0-4h14v4M3 5v14a2 2 0 0 0 2 2h16v-5M18 12a2 2 0 0 0 0 4h4v-4z',
   arrowup: 'M7 17 17 7M7 7h10v10',
@@ -483,13 +534,14 @@ function guard(action, what) {
 }
 
 /* ---------- Store ---------- */
-const STORE = 'akanta.books.v1';
+const STORE_BASE = 'akanta.books.v1';
+let STORE = STORE_BASE; // becomes akanta.books.v1:<uid> once signed in, so each account has its own copy on a device
 let DB = null;
 function loadDB() { try { const s = localStorage.getItem(STORE); if (s) return JSON.parse(s); } catch (e) { } return null; }
-let saveTimer = null;
-function save() { clearTimeout(saveTimer); saveTimer = setTimeout(() => { try { localStorage.setItem(STORE, JSON.stringify(DB)); } catch (e) { } }, 120); }
+let saveTimer = null, lastSaved = '';
+function save() { clearTimeout(saveTimer); saveTimer = setTimeout(() => { if (!DB) return; const j = JSON.stringify(DB); if (j === lastSaved) return; lastSaved = j; try { localStorage.setItem(STORE, j); localStorage.setItem(STORE + ':meta', JSON.stringify({ at: Date.now(), dirty: true })); } catch (e) { } if (window.queueCloud) queueCloud(); }, 120); }
 const C = () => DB.clients.find(c => c.id === DB.active) || DB.clients[0];
-const userName = () => (DB && DB.user) || 'Timothy';
+const userName = () => (window.AUTH && AUTH.user && (AUTH.user.displayName || (AUTH.user.email || '').split('@')[0])) || (DB && DB.user) || 'You';
 
 /* ---------- Audit trail (append-only, hash chained) ---------- */
 function hashStr(s) { let h1 = 0xdeadbeef, h2 = 0x41c6ce57; for (let i = 0; i < s.length; i++) { const ch = s.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); } h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909); h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909); return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16).padStart(14, '0'); }
@@ -1130,12 +1182,13 @@ function navBadges(c) {
 }
 function renderShell() {
   const c = C(); const b = navBadges(c);
-  $('#wsBtn').innerHTML = `<img class="ws-mark" src="${GEO_MARK}" alt="Geoinfotech"><span class="grow"><span class="t" style="display:block">${esc(c.name)}</span><span class="s">Akanta Books · FY ${TODAY.slice(0, 4)}</span></span>`;
+  $('#wsBtn').innerHTML = `<img class="ws-mark" src="${GEO_MARK}" alt=""><span class="grow"><span class="t" style="display:block">Akanta Books</span><span class="s">Financial year ${TODAY.slice(0, 4)}</span></span>`;
   $('#nav').innerHTML = NAV.map(([g, items]) => {
     const vis = items.filter(([k]) => DB.role !== 'client' || CLIENT_ROUTES.includes(k)); if (!vis.length) return '';
     return `<h6>${g}</h6>` + vis.map(([k, l, icn]) => `<button class="${route === k || (route === 'invoice-edit' && k === 'invoices') ? 'on' : ''}" data-act="nav" data-r="${k}">${ic(icn, 17)}<span>${l}</span>${b[k] || ''}</button>`).join('');
   }).join('');
-  $('#sideFoot').innerHTML = `<span class="avatar">${initials(userName())}</span><div class="who"><b>${esc(userName())}</b><small class="muted" style="font-size:12px">${esc(C().name)}</small></div><button class="iconbtn" style="width:30px;height:30px" data-act="nav" data-r="settings" aria-label="Settings">${ic('settings', 15)}</button>`;
+  const au = window.AUTH && AUTH.user, photo = au && au.photoURL;
+  $('#sideFoot').innerHTML = `${photo ? `<img class="avatar" src="${esc(photo)}" alt="" referrerpolicy="no-referrer" style="object-fit:cover">` : `<span class="avatar">${initials(userName())}</span>`}<div class="who"><b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(userName())}</b><small class="muted" id="syncSt" style="font-size:11.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${window.syncLabel ? syncLabel() : ''}</small></div><button class="iconbtn" style="width:30px;height:30px" data-act="nav" data-r="settings" aria-label="Settings" title="Settings">${ic('settings', 15)}</button>${au ? `<button class="iconbtn" style="width:30px;height:30px" data-act="sign-out" aria-label="Sign out" title="Sign out">${ic('logout', 15)}</button>` : ''}`;
   const [g, l] = ROUTE_LABEL[route] || ['', ''];
   $('#crumbs').innerHTML = `<span class="hide-sm cn">${esc(c.name)}</span><span class="hide-sm">${ic('chevr', 13)}</span><span class="hide-sm">${g}</span><span class="hide-sm">${ic('chevr', 13)}</span><b>${l}</b>`;
   $('.menu-btn').innerHTML = ic('menu', 18);
@@ -2561,8 +2614,9 @@ VIEWS.settings = () => {
     <div class="row"><button class="btn pri" data-act="save-lock">Update lock</button>${c.lockDate ? '<button class="btn" data-act="clear-lock">Remove lock</button>' : ''}</div>
     <p class="muted" style="font-size:12.5px;margin:0">Every change to the lock is written to the audit trail.</p></div></div>`;
   else body = `<div class="card"><div class="card-b" style="display:flex;flex-direction:column;gap:14px;max-width:640px">
+    ${window.accountCard ? accountCard() : ''}
     <div class="field"><label for="uName">Your name (shown on the audit trail and reports)</label><input class="in" id="uName" value="${esc(userName())}" style="max-width:320px"></div><div><button class="btn" data-act="save-user">Save name</button></div>
-    <div class="callout"><span class="ic">${ic('info', 18)}</span><div><b>Where your data lives</b><p>This version keeps all books in this browser on this device. Clearing browser data removes them. For shared, multi-user access the next step is a hosted database with sign-in.</p></div></div>
+    <div class="callout"><span class="ic">${ic('info', 18)}</span><div><b>Where your data lives</b><p>${window.AUTH && AUTH.user ? 'Your books are saved to your Akanta Books account, so you can sign in from any device and pick up where you left off. A copy is also kept on this device so the app opens fast and keeps working when the connection drops.' : 'You are using Akanta Books without an account, so the books are kept in this browser on this device only.'}</p></div></div>
     <div class="row">${C().sample ? '<button class="btn pri" data-act="start-fresh">Clear examples & start with real books</button>' : ''}<button class="btn danger" data-act="reset-all">Clear all data and start again</button></div></div></div>`;
   return `${ph('Settings', esc(c.name), '')}${tabs('setTab', t, [['company', 'Company'], ['profiles', 'Invoice businesses'], ['tax', 'Tax & deadlines'], ['lock', 'Period lock'], ['data', 'Account & data']])}${body}`;
 };
@@ -2573,9 +2627,9 @@ ACT['save-tax'] = () => { if (!guard('settings', 'change tax settings')) return;
 ACT['reset-tax'] = () => { if (!guard('settings', 'change tax settings')) return; C().tax = DEFAULT_TAX(); audit('Restored default tax settings', 'Tax', ''); render(); };
 ACT['save-lock'] = () => { if (!guard('lock', 'change the period lock')) return; const c = C(); const d = $('#lkDate').value; if (!d) return toast('Pick a date', true); const old = c.lockDate; c.lockDate = d; audit('Locked period', 'Books', `${old ? dLabel(old) : 'none'} → ${dLabel(d)}`); toast('Books locked through ' + dLabel(d)); render(); };
 ACT['clear-lock'] = () => { if (!guard('lock', 'change the period lock')) return; const c = C(); audit('Removed period lock', 'Books', 'was ' + dLabel(c.lockDate)); c.lockDate = null; toast('Lock removed'); render(); };
-ACT['save-user'] = () => { const v = $('#uName').value.trim(); if (!v) return; DB.user = v; toast('Saved'); render(); };
-ACT['reset-all'] = () => { if (!guard('reset', 'reset data')) return; modal({ title: 'Reset everything?', body: '<p style="margin:0">Every transaction, invoice, employee and setting saved in this browser is deleted and the books start empty. This cannot be undone.</p>', foot: `<button class="btn" data-act="close-modal">Cancel</button><button class="btn pri" data-act="reset-go">Reset</button>` }); };
-ACT['reset-go'] = () => { const theme = DB.theme; DB = freshDB(); DB.theme = theme; invalidate(); closeModal(); UI.imp = null; UI.draft = null; toast('All data cleared'); go('overview'); };
+ACT['save-user'] = async () => { const v = $('#uName').value.trim(); if (!v) return; DB.user = v; if (window.AUTH && AUTH.user) { try { await AUTH.user.updateProfile({ displayName: v }); } catch (e) { } } toast('Saved'); render(); };
+ACT['reset-all'] = () => { if (!guard('reset', 'reset data')) return; modal({ title: 'Reset everything?', body: '<p style="margin:0">Every transaction, invoice, employee and setting in these books is deleted and the books start empty. This cannot be undone.</p>', foot: `<button class="btn" data-act="close-modal">Cancel</button><button class="btn pri" data-act="reset-go">Reset</button>` }); };
+ACT['reset-go'] = () => { const theme = DB.theme, keepName = C().name; DB = freshDB(); DB.theme = theme; if (window.setupCompany) setupCompany(DB, keepName); invalidate(); closeModal(); UI.imp = null; UI.draft = null; toast('All data cleared'); go('overview'); };
 
 ACT['start-fresh'] = () => {
   const c = C();
@@ -2587,20 +2641,345 @@ ACT['start-fresh'] = () => {
 };
 
 /* ================= Boot ================= */
-(function boot() {
-  DB = loadDB();
+function prepareDB() {
   if (!DB || !DB.clients?.length || DB.clients.some(c => c.sample)) DB = freshDB(); DB.v = 3;
   DB.clients.forEach(c => (c.profiles || []).forEach(p => { if (!p.logo && /geoinfotech/i.test(p.name)) p.logo = GEO_MARK; }));
   DB.clients.forEach(c => { if (c.name === 'Geoinfotech Holdings') c.name = 'Geoinfotech Resources Limited'; (c.profiles || []).forEach(p => { if (p.name === 'Geoinfotech Holdings') { p.name = 'Geoinfotech Resources Limited'; if (/Geospatial/.test(p.tagline || '')) p.tagline = 'Geoservices · GeoInfo Academy · Geo Store'; } }); DEFAULT_COA.forEach(([code, name, type, sub]) => { if (!c.accounts.some(a => a.code === code)) c.accounts.push({ code, name, type, sub }); }); c.accounts.sort((a, b) => a.code.localeCompare(b.code)); if (c.tax && c.tax.whtPay == null) c.tax.whtPay = 10; c.receipts = c.receipts || []; });
+}
+let booted = false;
+function bootApp() {
+  prepareDB();
   applyTheme();
+  if (booted) { render(); return; }
+  booted = true;
   matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => { if (!DB.theme) render(); });
   render();
   const drop = () => $('#drop');
   document.addEventListener('dragover', e => { const d = drop(); if (d && d.contains(e.target)) { e.preventDefault(); d.classList.add('over'); } });
   document.addEventListener('dragleave', e => { const d = drop(); if (d) d.classList.remove('over'); });
   document.addEventListener('drop', e => { const d = drop(); if (d && d.contains(e.target)) { e.preventDefault(); d.classList.remove('over'); const inp = $('#fileIn'); if (e.dataTransfer.files[0]) { const dt = new DataTransfer(); dt.items.add(e.dataTransfer.files[0]); inp.files = dt.files; CH.file(inp); } } });
-  window.addEventListener('load', () => { if (window.Chart) render(); });
-})();
+  window.addEventListener('load', () => { if (window.Chart && DB) render(); });
+}
+/* ================= Accounts: sign up, sign in, Google, password reset, cloud sync ================= */
+const FB_CFG = {
+  apiKey: 'AIzaSyBY1fvZ8IlhOzqhqmOpEMEH4ZRguW-dX8I',
+  authDomain: 'akanta-books.firebaseapp.com',
+  projectId: 'akanta-books',
+  storageBucket: 'akanta-books.firebasestorage.app',
+  messagingSenderId: '454190010983',
+  appId: '1:454190010983:web:c467c6283ecc44e62efac2'
+};
+const FB_VER = '10.12.2';
+const FB_LIBS = ['app', 'auth', 'firestore'].map(n => `https://cdn.jsdelivr.net/npm/firebase@${FB_VER}/firebase-${n}-compat.js`);
+window.AUTH = { user: null, auth: null, db: null, local: false, sync: 'idle', mode: 'signin', busy: false, pendingName: '', pendingCompany: '' };
+
+/* ---------- small helpers ---------- */
+const A$ = s => document.getElementById(s);
+function loadSeq(urls) { return urls.reduce((p, u) => p.then(() => new Promise((res, rej) => { if ([...document.scripts].some(s => s.src === u)) return res(); const s = document.createElement('script'); s.src = u; s.onload = res; s.onerror = () => rej(new Error('load ' + u)); document.head.appendChild(s); })), Promise.resolve()); }
+const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
+const GOOGLE_G = `<svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>`;
+const CHECK = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`;
+
+function authErr(e) {
+  const c = (e && e.code) || '';
+  const map = {
+    'auth/invalid-email': 'That email address doesn’t look right.',
+    'auth/missing-email': 'Enter your email address.',
+    'auth/user-not-found': 'Email or password is incorrect.',
+    'auth/wrong-password': 'Email or password is incorrect.',
+    'auth/invalid-credential': 'Email or password is incorrect.',
+    'auth/invalid-login-credentials': 'Email or password is incorrect.',
+    'auth/email-already-in-use': 'An account with this email already exists. Sign in instead, or reset your password.',
+    'auth/weak-password': 'Choose a stronger password: at least 8 characters with a letter and a number.',
+    'auth/missing-password': 'Enter your password.',
+    'auth/too-many-requests': 'Too many attempts. Wait a few minutes, or reset your password.',
+    'auth/network-request-failed': 'Can’t reach the server. Check your internet connection and try again.',
+    'auth/popup-closed-by-user': 'The Google window was closed before sign-in finished.',
+    'auth/cancelled-popup-request': 'The Google window was closed before sign-in finished.',
+    'auth/unauthorized-domain': 'Google sign-in isn’t enabled for this web address yet. Use email and password, or open the app from its main link.',
+    'auth/account-exists-with-different-credential': 'This email is already registered with a password. Sign in with email and password.',
+    'auth/user-disabled': 'This account has been switched off. Contact the administrator.',
+    'auth/operation-not-allowed': 'This sign-in method isn’t switched on yet.',
+    'auth/requires-recent-login': 'For your security, sign out and sign in again, then retry.'
+  };
+  return map[c] || (e && e.message ? e.message.replace(/^Firebase:\s*/, '').replace(/\s*\(auth\/[^)]+\)\.?$/, '') : 'Something went wrong. Please try again.');
+}
+function pwScore(p) { let s = 0; if (p.length >= 8) s++; if (p.length >= 12) s++; if (/[a-z]/.test(p) && /[A-Z]/.test(p)) s++; if (/\d/.test(p)) s++; if (/[^A-Za-z0-9]/.test(p)) s++; return Math.min(4, s); }
+
+/* ---------- screens ---------- */
+function pwField(id, label, ac, extra = '') {
+  return `<div class="field"><label for="${id}">${label}</label><div class="pw"><input class="in" id="${id}" type="password" autocomplete="${ac}" ${extra}><button type="button" class="eye" data-eye="${id}" aria-label="Show password" aria-pressed="false" title="Show password">${ic('eye', 18)}</button></div></div>`;
+}
+function brandPanel() {
+  const pts = ['Upload bank statements (CSV, Excel or PDF) and sort money in and out', 'Income statement, financial position, cash flow and an executive summary', 'Invoices, receipts, payroll with PAYE, pension and WHT', 'Reminders for VAT, WHT, PAYE and CIT before they fall due'];
+  return `<aside class="auth-brand"><div class="lg"><img src="${GEO_MARK}" alt="">Akanta Books</div>
+    <div><h2>Your books, payroll and tax in one place.</h2><p>Built for Nigerian businesses and their accountants. Sign in from any device and your books are right where you left them.</p>
+    <ul>${pts.map(p => `<li>${CHECK}<span>${p}</span></li>`).join('')}</ul></div>
+    <small>© ${TODAY.slice(0, 4)} Akanta Books · Amounts in Naira (₦)</small></aside>`;
+}
+function renderAuth(mode, msg) {
+  AUTH.mode = mode = mode || AUTH.mode; AUTH.busy = false;
+  const root = A$('auth'); document.documentElement.classList.remove('signed');
+  const m = msg ? `<div class="auth-msg ${msg.ok ? 'ok' : 'err'}" role="${msg.ok ? 'status' : 'alert'}">${esc(msg.text)}</div>` : '';
+  const google = `<div class="auth-or">or</div><button type="button" class="btn gbtn" id="aGoogle">${GOOGLE_G}<span>Continue with Google</span></button>`;
+  const mlogo = `<div class="mlogo"><img src="${GEO_MARK}" alt="">Akanta Books</div>`;
+  let card = '';
+  if (mode === 'loading') card = `<div class="auth-load"><div class="spin" aria-hidden="true"></div><span id="aLoadTxt">${esc(msg && msg.text || 'Opening Akanta Books…')}</span></div>`;
+  else if (mode === 'offline') card = `${mlogo}<h1>Can’t reach sign-in</h1><p class="sub">Akanta Books couldn’t connect to its account service. Check your internet connection and try again.</p>
+      <button class="btn pri" id="aRetry">Try again</button>
+      <div class="auth-foot">Just looking around? <button class="linkbtn" id="aLocal">Use without an account on this device</button></div>`;
+  else if (mode === 'signup') card = `${mlogo}<div><h1>Create your account</h1></div><p class="sub">Free to start. Your books are saved to your account and available on any device.</p>${m}
+      <form id="aForm" novalidate style="display:flex;flex-direction:column;gap:14px">
+        <div class="field"><label for="aName">Full name</label><input class="in" id="aName" autocomplete="name" required></div>
+        <div class="field"><label for="aCo">Company name</label><input class="in" id="aCo" autocomplete="organization" placeholder="e.g. Geoinfotech Resources Limited"></div>
+        <div class="field"><label for="aEmail">Email address</label><input class="in" id="aEmail" type="email" autocomplete="email" inputmode="email" required></div>
+        ${pwField('aPw', 'Password', 'new-password', 'minlength="8"')}
+        <div style="margin-top:-8px"><div class="pw-meter"><i id="aMeter"></i></div><div class="pw-hint" id="aHint">At least 8 characters, with a letter and a number.</div></div>
+        ${pwField('aPw2', 'Confirm password', 'new-password')}
+        <button class="btn pri" type="submit" id="aGo">Create account</button>
+      </form>${google}
+      <div class="auth-foot">Already have an account? <button class="linkbtn" data-mode="signin">Sign in</button></div>`;
+  else if (mode === 'forgot') card = `${mlogo}<div><h1>Reset your password</h1></div><p class="sub">Enter the email you signed up with and we’ll send you a link to choose a new password.</p>${m}
+      <form id="aForm" novalidate style="display:flex;flex-direction:column;gap:14px">
+        <div class="field"><label for="aEmail">Email address</label><input class="in" id="aEmail" type="email" autocomplete="email" inputmode="email" value="${esc(AUTH.lastEmail || '')}" required></div>
+        <button class="btn pri" type="submit" id="aGo">Send reset link</button>
+      </form>
+      <div class="auth-foot"><button class="linkbtn" data-mode="signin">← Back to sign in</button></div>`;
+  else if (mode === 'company') card = `${mlogo}<div><h1>Welcome${AUTH.user && AUTH.user.displayName ? ', ' + esc(AUTH.user.displayName.split(' ')[0]) : ''}</h1></div><p class="sub">One last thing: what’s the name of the company these books are for? It appears on invoices, receipts and reports. You can change it later in Settings.</p>${m}
+      <form id="aForm" novalidate style="display:flex;flex-direction:column;gap:14px">
+        <div class="field"><label for="aCo">Company name</label><input class="in" id="aCo" autocomplete="organization" placeholder="e.g. Geoinfotech Resources Limited" required></div>
+        <button class="btn pri" type="submit" id="aGo">Open my books</button>
+      </form>
+      <div class="auth-foot"><button class="linkbtn" id="aOut">Use a different account</button></div>`;
+  else card = `${mlogo}<div><h1>Welcome back</h1></div><p class="sub">Sign in to your Akanta Books account.</p>${m}
+      <form id="aForm" novalidate style="display:flex;flex-direction:column;gap:14px">
+        <div class="field"><label for="aEmail">Email address</label><input class="in" id="aEmail" type="email" autocomplete="username" inputmode="email" value="${esc(AUTH.lastEmail || '')}" required></div>
+        ${pwField('aPw', 'Password', 'current-password')}
+        <div class="auth-row"><label class="chk"><input type="checkbox" id="aKeep" checked> Keep me signed in</label><button type="button" class="linkbtn" data-mode="forgot">Forgot password?</button></div>
+        <button class="btn pri" type="submit" id="aGo">Sign in</button>
+      </form>${google}
+      <div class="auth-foot">New to Akanta Books? <button class="linkbtn" data-mode="signup">Create an account</button></div>`;
+  root.innerHTML = `${brandPanel()}<main class="auth-main"><div class="auth-card">${card}</div></main>`;
+  wireAuth(mode);
+}
+
+function wireAuth(mode) {
+  const root = A$('auth');
+  root.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { const e = A$('aEmail'); if (e) AUTH.lastEmail = e.value.trim(); renderAuth(b.dataset.mode); });
+  root.querySelectorAll('[data-eye]').forEach(b => b.onclick = () => {
+    const inp = A$(b.dataset.eye); const show = inp.type === 'password'; inp.type = show ? 'text' : 'password';
+    b.innerHTML = ic(show ? 'eyeoff' : 'eye', 18); b.setAttribute('aria-pressed', show); const l = show ? 'Hide password' : 'Show password'; b.setAttribute('aria-label', l); b.title = l; inp.focus();
+  });
+  const g = A$('aGoogle'); if (g) g.onclick = googleSignIn;
+  const rt = A$('aRetry'); if (rt) rt.onclick = () => startAuth();
+  const lo = A$('aLocal'); if (lo) lo.onclick = useLocalOnly;
+  const out = A$('aOut'); if (out) out.onclick = async () => { try { await AUTH.auth.signOut(); } catch (e) { } renderAuth('signin'); };
+  const pw = A$('aPw'), meter = A$('aMeter');
+  if (pw && meter) pw.oninput = () => { const s = pwScore(pw.value); const cols = ['var(--bad)', 'var(--bad)', 'var(--warn)', 'var(--good)', 'var(--good)']; meter.style.width = pw.value ? (s + 1) * 20 + '%' : '0'; meter.style.background = cols[s]; A$('aHint').textContent = !pw.value ? 'At least 8 characters, with a letter and a number.' : ['Too weak', 'Weak', 'Fair', 'Good', 'Strong'][s] + (pw.value.length < 8 ? ' · use at least 8 characters' : ''); };
+  const f = A$('aForm'); if (f) f.onsubmit = e => { e.preventDefault(); submitAuth(mode); };
+  const first = root.querySelector('.auth-card input:not([type=checkbox])'); if (first && !first.value && innerWidth > 900) first.focus(); else if (A$('aPw') && A$('aEmail') && A$('aEmail').value && innerWidth > 900) A$('aPw').focus();
+}
+function setBusy(on, label) { AUTH.busy = on; const b = A$('aGo'); if (b) { b.disabled = on; if (label) b.textContent = label; } const g = A$('aGoogle'); if (g) g.disabled = on; }
+function showMsg(text, ok) {
+  const card = document.querySelector('.auth-card'); if (!card) return; let el = card.querySelector('.auth-msg');
+  if (!el) { el = document.createElement('div'); const f = A$('aForm'); card.insertBefore(el, f || card.firstChild); }
+  el.className = 'auth-msg ' + (ok ? 'ok' : 'err'); el.setAttribute('role', ok ? 'status' : 'alert'); el.textContent = text;
+}
+
+async function submitAuth(mode) {
+  if (AUTH.busy) return;
+  const v = id => (A$(id) ? A$(id).value : '');
+  const email = v('aEmail').trim(); AUTH.lastEmail = email;
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+  try {
+    if (mode === 'signin') {
+      if (!emailOk) return showMsg('Enter a valid email address.');
+      if (!v('aPw')) return showMsg('Enter your password.');
+      setBusy(true, 'Signing in…');
+      await AUTH.auth.setPersistence(A$('aKeep').checked ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION);
+      await AUTH.auth.signInWithEmailAndPassword(email, v('aPw'));
+    } else if (mode === 'signup') {
+      const name = v('aName').trim(), pw = v('aPw');
+      if (name.length < 2) return showMsg('Enter your full name.');
+      if (!emailOk) return showMsg('Enter a valid email address.');
+      if (pw.length < 8 || !/[A-Za-z]/.test(pw) || !/\d/.test(pw)) return showMsg('Use a password of at least 8 characters, with at least one letter and one number.');
+      if (pw !== v('aPw2')) return showMsg('The two passwords don’t match.');
+      AUTH.pendingName = name; AUTH.pendingCompany = v('aCo').trim();
+      setBusy(true, 'Creating account…');
+      await AUTH.auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+      const cred = await AUTH.auth.createUserWithEmailAndPassword(email, pw);
+      try { await cred.user.updateProfile({ displayName: name }); } catch (e) { }
+      try { await cred.user.sendEmailVerification(); } catch (e) { }
+    } else if (mode === 'forgot') {
+      if (!emailOk) return showMsg('Enter a valid email address.');
+      setBusy(true, 'Sending…');
+      try { await AUTH.auth.sendPasswordResetEmail(email); }
+      catch (e) { if (!/user-not-found/.test(e.code || '')) throw e; }
+      setBusy(false, 'Send reset link');
+      renderAuth('signin', { ok: true, text: `If an account exists for ${email}, a password reset link is on its way. Check your inbox (and spam folder), set a new password, then sign in here.` });
+    } else if (mode === 'company') {
+      const co = v('aCo').trim(); if (co.length < 2) return showMsg('Enter your company name.');
+      setBusy(true, 'Opening…'); AUTH.pendingCompany = co; await openBooks(AUTH.user, true);
+    }
+  } catch (e) {
+    setBusy(false, { signin: 'Sign in', signup: 'Create account', forgot: 'Send reset link', company: 'Open my books' }[mode]);
+    showMsg(authErr(e));
+  }
+}
+
+async function googleSignIn() {
+  if (AUTH.busy) return;
+  const prov = new firebase.auth.GoogleAuthProvider(); prov.setCustomParameters({ prompt: 'select_account' });
+  setBusy(true);
+  try { await AUTH.auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL); await AUTH.auth.signInWithPopup(prov); }
+  catch (e) {
+    if (['auth/popup-blocked', 'auth/operation-not-supported-in-this-environment', 'auth/web-storage-unsupported'].includes(e.code)) {
+      try { await AUTH.auth.signInWithRedirect(prov); return; } catch (e2) { e = e2; }
+    }
+    setBusy(false);
+    if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') return;
+    showMsg(authErr(e));
+  }
+}
+
+/* ---------- books: load, first-run setup, cloud sync ---------- */
+function setupCompany(db, name) {
+  name = (name || '').trim(); if (!name) return db;
+  const c = db.clients[0]; const isGeo = /geoinfotech/i.test(name);
+  c.name = name; if (!isGeo) { c.industry = ''; }
+  (c.profiles || []).forEach((p, i) => { if (i) return; p.name = name; if (!isGeo) { p.tagline = ''; p.logo = ''; p.prefix = (name.replace(/[^A-Za-z ]/g, ' ').trim().split(/\s+/).filter(w => !/^(limited|ltd|plc|and|the|of|nig|nigeria)$/i.test(w)).map(w => w[0]).join('').slice(0, 3) || 'INV').toUpperCase(); } });
+  return db;
+}
+window.setupCompany = setupCompany;
+const userDoc = () => AUTH.db.collection('users').doc(AUTH.user.uid);
+async function gz(str) {
+  if (!window.CompressionStream) return 'r:' + str;
+  const buf = new Uint8Array(await new Response(new Blob([str]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer());
+  let s = ''; for (let i = 0; i < buf.length; i += 0x8000) s += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000)); return 'g:' + btoa(s);
+}
+async function ungz(s) {
+  if (s.startsWith('r:')) return s.slice(2);
+  const bin = atob(s.slice(2)); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+  return await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+}
+async function cloudLoad() {
+  const snap = await userDoc().get(); if (!snap.exists) return null; const meta = snap.data(); if (!meta.n) return null;
+  const parts = await Promise.all([...Array(meta.n)].map((_, i) => userDoc().collection('books').doc('part' + i).get()));
+  if (parts.some(p => !p.exists)) throw new Error('Saved books are incomplete');
+  return { db: JSON.parse(await ungz(parts.map(p => p.data().d).join(''))), at: meta.updatedAt || 0 };
+}
+let cloudTimer = null, cloudBusy = false, cloudAgain = false, lastCloud = '';
+async function cloudSave() {
+  if (!AUTH.user || !AUTH.db || !DB) return true;
+  if (cloudBusy) { cloudAgain = true; return false; }
+  const json = JSON.stringify(DB); if (json === lastCloud) { setSync('saved'); return true; }
+  cloudBusy = true; setSync('saving');
+  try {
+    const payload = await gz(json); const SZ = 900000; const parts = []; for (let i = 0; i < payload.length; i += SZ) parts.push(payload.slice(i, i + SZ));
+    const at = Date.now(); const b = AUTH.db.batch();
+    parts.forEach((p, i) => b.set(userDoc().collection('books').doc('part' + i), { d: p }));
+    b.set(userDoc(), { n: parts.length, updatedAt: at, bytes: payload.length, email: AUTH.user.email || '', name: AUTH.user.displayName || '', app: 'akanta-books' });
+    await withTimeout(b.commit(), 20000);
+    lastCloud = json; try { localStorage.setItem(STORE + ':meta', JSON.stringify({ at, dirty: false })); } catch (e) { }
+    setSync('saved'); return true;
+  } catch (e) { console.warn('Cloud save failed', e); setSync(navigator.onLine ? 'error' : 'offline'); clearTimeout(cloudTimer); cloudTimer = setTimeout(cloudSave, 15000); return false; }
+  finally { cloudBusy = false; if (cloudAgain) { cloudAgain = false; queueCloud(); } }
+}
+function queueCloud() { if (!AUTH.user) return; setSync('pending'); clearTimeout(cloudTimer); cloudTimer = setTimeout(cloudSave, 1200); }
+window.queueCloud = queueCloud;
+function syncLabel() {
+  if (AUTH.local) return 'Saved on this device only';
+  return { idle: 'Saved to your account', saved: 'All changes saved', pending: 'Saving…', saving: 'Saving…', offline: 'Offline · saved on this device', error: 'Couldn’t save to your account · retrying' }[AUTH.sync] || '';
+}
+window.syncLabel = syncLabel;
+function setSync(s) { AUTH.sync = s; const el = A$('syncSt'); if (el) { el.textContent = syncLabel(); el.style.color = s === 'error' || s === 'offline' ? 'var(--warn)' : ''; } }
+
+async function openBooks(user, fromCompanyStep) {
+  AUTH.user = user; STORE = STORE_BASE + ':' + user.uid;
+  let local = null, meta = { at: 0, dirty: false };
+  try { local = JSON.parse(localStorage.getItem(STORE) || 'null'); meta = JSON.parse(localStorage.getItem(STORE + ':meta') || 'null') || meta; } catch (e) { }
+  let cloud = null, cloudOk = true;
+  try { cloud = await withTimeout(cloudLoad(), 15000); } catch (e) { console.warn('Cloud load failed', e); cloudOk = false; }
+  let db = null, push = false;
+  if (cloud && local && meta.dirty && meta.at > cloud.at) { db = local; push = true; }
+  else if (cloud) { db = cloud.db; lastCloud = JSON.stringify(cloud.db); }
+  else if (local) { db = local; push = cloudOk; }
+  if (!db) {
+    if (!cloudOk) { renderAuth('offline'); return; }
+    // First sign-in: bring along books started on this device before accounts existed (once only)
+    let legacy = null; try { if (!localStorage.getItem(STORE_BASE + ':claimed')) { const l = JSON.parse(localStorage.getItem(STORE_BASE) || 'null'); if (l && l.clients && l.clients.length && !l.clients.some(c => c.sample) && l.clients.some(c => (c.journals || []).length || (c.bank || []).length || (c.invoices || []).length || (c.employees || []).length)) legacy = l; } } catch (e) { }
+    if (legacy) { db = legacy; try { localStorage.setItem(STORE_BASE + ':claimed', user.uid); } catch (e) { } }
+    else {
+      const name = AUTH.pendingCompany;
+      if (!name && !fromCompanyStep) { AUTH.user = user; renderAuth('company'); return; }
+      db = setupCompany(freshDB(), name);
+    }
+    push = true;
+  }
+  db.user = user.displayName || AUTH.pendingName || db.user || (user.email || '').split('@')[0];
+  AUTH.user = user; DB = db; lastSaved = ''; AUTH.pendingCompany = '';
+  document.documentElement.classList.add('signed'); A$('auth').innerHTML = '';
+  if (typeof invalidate === 'function') try { invalidate(); } catch (e) { }
+  route = 'overview'; bootApp();
+  setSync(cloudOk ? (push ? 'pending' : 'saved') : 'offline');
+  if (push) cloudSave();
+  if (!user.emailVerified && user.providerData.some(p => p.providerId === 'password') && Date.now() - new Date(user.metadata.creationTime).getTime() < 120000) toast('Account created. We sent a link to ' + user.email + ' to confirm your email.');
+}
+
+function useLocalOnly() {
+  AUTH.local = true; STORE = STORE_BASE; DB = loadDB(); lastSaved = '';
+  document.documentElement.classList.add('signed'); A$('auth').innerHTML = ''; bootApp();
+}
+
+/* ---------- account actions in the app ---------- */
+function accountCard() {
+  if (!AUTH.user) return AUTH.local ? `<div class="callout"><span class="ic">${ic('info', 18)}</span><div><b>Not signed in</b><p>Sign in to save your books to an account and use them on any device.</p><div class="row" style="margin-top:8px"><button class="btn pri" data-act="go-signin">Sign in</button></div></div></div>` : '';
+  const u = AUTH.user, pw = u.providerData.some(p => p.providerId === 'password'), g = u.providerData.some(p => p.providerId === 'google.com');
+  return `<div style="display:flex;gap:14px;align-items:center;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2)">
+    ${u.photoURL ? `<img class="avatar" src="${esc(u.photoURL)}" alt="" referrerpolicy="no-referrer" style="width:44px;height:44px;object-fit:cover">` : `<span class="avatar" style="width:44px;height:44px;font-size:15px">${initials(userName())}</span>`}
+    <div style="min-width:0;flex:1"><b style="display:block">${esc(userName())}</b><span class="muted" style="font-size:13px;word-break:break-all">${esc(u.email || '')}</span><div class="muted" style="font-size:12px;margin-top:2px">Signed in with ${[pw && 'email & password', g && 'Google'].filter(Boolean).join(' and ')}${pw && !u.emailVerified ? ' · email not yet confirmed' : ''} · ${esc(syncLabel())}</div></div></div>
+    <div class="row">${pw ? '<button class="btn" data-act="acct-reset">Email me a password reset link</button>' : ''}${pw && !u.emailVerified ? '<button class="btn" data-act="acct-verify">Resend confirmation email</button>' : ''}<button class="btn" data-act="sign-out">${ic('logout', 15)}Sign out</button></div>`;
+}
+window.accountCard = accountCard;
+ACT['acct-reset'] = async () => { try { await AUTH.auth.sendPasswordResetEmail(AUTH.user.email); toast('Reset link sent to ' + AUTH.user.email); } catch (e) { toast(authErr(e), true); } };
+ACT['acct-verify'] = async () => { try { await AUTH.user.sendEmailVerification(); toast('Confirmation email sent to ' + AUTH.user.email); } catch (e) { toast(authErr(e), true); } };
+ACT['go-signin'] = () => location.reload();
+ACT['sign-out'] = async () => {
+  if (!AUTH.user) return;
+  toast('Saving and signing out…');
+  clearTimeout(saveTimer); try { localStorage.setItem(STORE, JSON.stringify(DB)); } catch (e) { }
+  const ok = await cloudSave();
+  if (!ok) return modal({ title: 'Sign out without syncing?', body: '<p style="margin:0">Your most recent changes haven’t reached your account yet, usually because there’s no internet connection. They are kept on this device and will upload the next time you sign in here.</p>', foot: `<button class="btn" data-act="close-modal">Stay signed in</button><button class="btn pri" data-act="sign-out-go">Sign out anyway</button>` });
+  try { localStorage.removeItem(STORE); localStorage.removeItem(STORE + ':meta'); } catch (e) { }
+  await AUTH.auth.signOut(); location.reload();
+};
+ACT['sign-out-go'] = async () => { await AUTH.auth.signOut(); location.reload(); };
+
+/* ---------- start ---------- */
+async function startAuth() {
+  renderAuth('loading');
+  try { await withTimeout(loadSeq(FB_LIBS), 20000); } catch (e) { renderAuth('offline'); return; }
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(FB_CFG);
+    AUTH.auth = firebase.auth(); AUTH.db = firebase.firestore();
+    if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && /[?&]emu\b/.test(location.search)) { AUTH.auth.useEmulator('http://127.0.0.1:9099', { disableWarnings: true }); AUTH.db.useEmulator('127.0.0.1', 8080); }
+  } catch (e) { console.error(e); renderAuth('offline'); return; }
+  try { await AUTH.auth.getRedirectResult(); } catch (e) { if (e.code && e.code !== 'auth/no-auth-event') AUTH.redirectErr = e; }
+  let first = true;
+  AUTH.auth.onAuthStateChanged(async user => {
+    if (user) {
+      if (AUTH.user && AUTH.user.uid === user.uid && document.documentElement.classList.contains('signed')) return;
+      renderAuth('loading', { text: 'Opening your books…' });
+      await openBooks(user);
+    } else if (AUTH.user && !first) { location.reload(); }
+    else { renderAuth('signin', AUTH.redirectErr ? { text: authErr(AUTH.redirectErr) } : null); AUTH.redirectErr = null; }
+    first = false;
+  });
+}
+window.addEventListener('online', () => { if (AUTH.user && AUTH.sync !== 'saved') cloudSave(); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && AUTH.user && (AUTH.sync === 'pending' || AUTH.sync === 'error')) cloudSave(); });
+window.addEventListener('beforeunload', e => { if (AUTH.user && ['pending', 'saving'].includes(AUTH.sync)) { cloudSave(); e.preventDefault(); e.returnValue = ''; } });
+startAuth();
 </script>
 
 </body>
