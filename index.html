@@ -614,7 +614,7 @@ const DEFAULT_COA = [
   ['6200', 'Diesel & Generator', 'expense', 'opex'], ['6210', 'Electricity (DisCo)', 'expense', 'opex'], ['6300', 'Transport & Logistics', 'expense', 'opex'],
   ['6400', 'Marketing & Advertising', 'expense', 'opex'], ['6500', 'Bank Charges & Levies', 'expense', 'opex'], ['6600', 'Internet & Telephone', 'expense', 'opex'],
   ['6700', 'Professional Fees', 'expense', 'opex'], ['6800', 'Repairs & Maintenance', 'expense', 'opex'], ['6900', 'Depreciation', 'expense', 'opex'],
-  ['6950', 'Office Supplies & Admin', 'expense', 'opex'], ['6990', 'Interest Expense', 'expense', 'finance'], ['7000', 'Income Tax Expense', 'expense', 'tax'],
+  ['6950', 'Office Supplies & Admin', 'expense', 'opex'], ['6980', 'General Business Expenses', 'expense', 'opex'], ['6990', 'Interest Expense', 'expense', 'finance'], ['7000', 'Income Tax Expense', 'expense', 'tax'],
 ];
 const TYPE_LABEL = { asset: 'Assets', liability: 'Liabilities', equity: 'Equity', income: 'Income', expense: 'Expenses' };
 const SUB_LABEL = { cash: 'Cash & bank', ar: 'Receivables', tax: 'Tax', current: 'Current', fixed: 'Fixed asset', contra: 'Contra asset', ap: 'Payables', payroll: 'Payroll', loan: 'Long-term', capital: 'Capital', retained: 'Retained', sales: 'Operating', other: 'Other', cogs: 'Cost of sales', opex: 'Operating expense', finance: 'Finance cost' };
@@ -1444,7 +1444,7 @@ VIEWS.bank = () => {
   const tabList = isClient ? [['import', 'Upload statement']] : [['txns', 'Transactions', cnt('review') ? ` <span class="badge">${cnt('review')}</span>` : ''], ['import', 'Import statement'], ['rules', 'Bank rules'], ['reconcile', 'Reconcile']];
   if (isClient) UI.bankTab = 'import';
   const last = c.bank[c.bank.length - 1];
-  return `${ph('Bank & statements', `${esc(c.bankName || 'Main account')} · statement balance ${last ? money(last.balance ?? 0) : '—'} · ${c.reconciledTo ? 'reconciled to ' + dLabel(c.reconciledTo) : 'not reconciled yet'}`, isClient ? '' : `<button class="btn" data-act="rerun-rules">${ic('refresh', 15)} Categorise money in</button><button class="btn pri" data-act="seg" data-name="bankTab" data-v="import">${ic('upload', 15)} Import statement</button>`)}
+  return `${ph('Bank & statements', `${esc(c.bankName || 'Main account')} · statement balance ${last ? money(last.balance ?? 0) : '—'} · ${c.reconciledTo ? 'reconciled to ' + dLabel(c.reconciledTo) : 'not reconciled yet'}`, isClient ? '' : `<button class="btn" data-act="rerun-rules">${ic('refresh', 15)} Categorise all</button><button class="btn pri" data-act="seg" data-name="bankTab" data-v="import">${ic('upload', 15)} Import statement</button>`)}
   ${tabs('bankTab', UI.bankTab, tabList)}
   ${({ txns: bankTxns, import: bankImport, rules: bankRules, reconcile: bankRecon }[UI.bankTab] || bankTxns)(c)}`;
 };
@@ -1460,7 +1460,7 @@ function bankTxns(c) {
     <div class="toolbar"><div class="l">${seg('bankFilter', f, [['review', `For review (${cnt('review')})`], ['categorized', 'Categorised'], ['matched', 'Matched'], ['excluded', 'Excluded'], ['all', 'All']])}</div>
       <div class="rt"><select class="in sm" style="width:auto" data-ch="bankMonth" aria-label="Month"><option value="">All months</option>${months.map(m => `<option value="${m}" ${UI.bankMonth === m ? 'selected' : ''}>${mLabel(m)}</option>`).join('')}</select>
       <div class="minisearch">${ic('search', 14)}<input class="in sm" id="bankSearch" data-in="bankSearch" placeholder="Search narration" value="${esc(UI.bankSearch)}"></div><button class="btn sm" data-act="export-bank">${ic('arrowdn', 14)} Excel</button></div></div>
-    ${f === 'review' ? (() => { const outs = c.bank.filter(t => t.status === 'review' && t.amount < 0); const ns = outs.filter(t => suggestFor(c, t)).length; const ins = c.bank.filter(t => t.status === 'review' && t.amount > 0).length; return outs.length || ins ? `<div class="callout" style="margin:0 16px 12px"><span class="ic">${ic('info', 18)}</span><div style="flex:1;min-width:0"><b>Money out needs your approval</b><p>${outs.length} payment${outs.length === 1 ? '' : 's'} waiting. ${ns ? `${ns} ha${ns === 1 ? 's' : 've'} a suggested expense category based on the remark or an earlier payment to the same payee.` : 'Choose an expense category for each.'}${ins ? ` ${ins} money-in line${ins === 1 ? ' is' : 's are'} also waiting: click “Categorise money in”.` : ''}</p></div>${ns ? `<button class="btn sm pri" data-act="accept-sugg">Accept ${ns} suggestion${ns === 1 ? '' : 's'}</button>` : ''}</div>` : ''; })() : ''}
+    ${f === 'review' ? (() => { const left = c.bank.filter(t => t.status === 'review').length; return left ? `<div class="callout" style="margin:0 16px 12px"><span class="ic">${ic('info', 18)}</span><div style="flex:1;min-width:0"><b>${left} line${left === 1 ? '' : 's'} not posted yet</b><p>Money in is posted to income and money out to expenses automatically. These lines were left because they fall in a locked period or were sent back by you. Pick a category, or click “Categorise all”.</p></div><button class="btn sm pri" data-act="rerun-rules">Categorise all</button></div>` : ''; })() : ''}
     ${sel.size ? `<div class="toolbar" style="background:var(--accent-soft);padding:10px 16px"><b>${sel.size} selected</b><div class="rt"><select class="in sm" id="bulkAcct" style="width:260px">${accOptions(c, '', a => a.sub !== 'contra', 'Categorise as…')}</select><button class="btn sm pri" data-act="bulk-cat">Apply</button><button class="btn sm" data-act="bulk-exclude">Exclude</button><button class="btn sm ghost" data-act="bulk-clear">Clear</button></div></div>` : ''}
     <div class="tbl-wrap"><table class="t"><thead><tr>${f === 'review' ? `<th style="width:36px"><input type="checkbox" class="chk" data-act="bulk-all" aria-label="Select all" ${shown.length && shown.every(t => sel.has(t.id)) ? 'checked' : ''}></th>` : ''}<th>Date</th><th>Narration</th><th>Category</th><th class="r">Money in</th><th class="r">Money out</th><th class="r">Balance</th><th></th></tr></thead><tbody>
     ${shown.map(t => bankRow(c, t, f === 'review')).join('') || `<tr><td colspan="8"><div class="empty"><b>${f === 'review' ? 'Nothing to review' : 'No transactions'}</b>${f === 'review' ? 'Every bank line is categorised or matched. Nice work.' : 'Try another filter or import a statement.'}</div></td></tr>`}
@@ -1475,8 +1475,8 @@ function bankRow(c, t, selectable) {
       ${lm ? `<div style="margin-top:6px"><button class="btn sm acc" data-act="match-led" data-id="${t.id}" data-j="${lm.id}">${ic('link', 13)} Match ${lm.no}</button> <span class="muted" style="font-size:12px">${esc(lm.memo)}</span></div>` : ''}`;
   } else if (t.status === 'matched') { const j = c.journals.find(j => j.id === t.journalId); cat = `<span class="pill acc">${ic('link', 12)} ${j ? esc(j.memo).slice(0, 34) : 'Matched'}</span>`; }
   else if (t.status === 'excluded') cat = `<span class="pill">Excluded</span>`;
-  else cat = `<span style="cursor:pointer" data-act="drill" data-a="${t.account}">${esc(accName(c, t.account))}</span>${t.auto ? ' <span class="tag" title="Money in, posted to income automatically">auto</span>' : ''}${t.invoiceId ? ` <span class="tag">${esc(c.invoices.find(i => i.id === t.invoiceId)?.no || '')}</span>` : ''}`;
-  const actions = t.status === 'review' ? `<button class="btn sm ghost" data-act="mk-rule" data-id="${t.id}" title="Create a rule from this line">Rule</button><button class="btn sm ghost" data-act="exclude" data-id="${t.id}" title="Exclude (duplicate / personal / already recorded)">Exclude</button>` : `<button class="btn sm ghost" data-act="uncat" data-id="${t.id}" title="Send back to review">Undo</button>`;
+  else cat = `<span style="cursor:pointer" data-act="drill" data-a="${t.account}">${esc(accName(c, t.account))}</span>${t.auto ? ` <span class="tag" title="${t.amount > 0 ? 'Money in, posted to income automatically' : 'Money out, posted to expenses automatically'}">auto</span>` : ''}${t.invoiceId ? ` <span class="tag">${esc(c.invoices.find(i => i.id === t.invoiceId)?.no || '')}</span>` : ''}`;
+  const actions = t.status === 'review' ? `<button class="btn sm ghost" data-act="mk-rule" data-id="${t.id}" title="Create a rule from this line">Rule</button><button class="btn sm ghost" data-act="exclude" data-id="${t.id}" title="Exclude (duplicate / personal / already recorded)">Exclude</button>` : `<button class="btn sm ghost" data-act="uncat" data-id="${t.id}" title="Pick a different category">Change</button>`;
   return `<tr>${selectable ? `<td><input type="checkbox" data-act="bulk-one" data-id="${t.id}" aria-label="Select" ${UI.sel.has(t.id) ? 'checked' : ''}></td>` : ''}<td class="nowrap">${dLabel(t.date)}</td><td style="min-width:220px;max-width:340px"><b style="font-weight:500;display:block">${esc(t.party || prettyDesc(t.desc))}</b><small class="muted mono" style="font-size:11.5px">${esc(t.desc)}</small></td><td style="min-width:200px">${cat}</td><td class="r amt-in">${t.amount > 0 ? money(t.amount) : ''}</td><td class="r">${t.amount < 0 ? money(-t.amount) : ''}</td><td class="r muted">${t.balance != null ? money(t.balance) : ''}</td><td class="nowrap">${DB.role === 'client' ? '' : actions}</td></tr>`;
 }
 function applyRulesPeek(c, t) { const up = t.desc.toUpperCase(); for (const r of c.rules) { if (r.dir && ((r.dir === 'in' && t.amount < 0) || (r.dir === 'out' && t.amount > 0))) continue; try { if (new RegExp(r.match, 'i').test(up)) return r; } catch (e) { } } return null; }
@@ -1496,6 +1496,7 @@ ACT.uncat = el => {
   const c = C(); const t = c.bank.find(x => x.id === el.dataset.id); if (!guard('bank', 'change bank lines')) return;
   attempt(() => {
     const lm = lockedMsg(c, t.date); if (lm && t.status === 'categorized') throw new Error(lm);
+    t.auto = false;
     if (t.status === 'categorized') { const j = c.journals.find(j => j.id === t.journalId); c.journals = c.journals.filter(x => x !== j); invalidate(); if (t.invoiceId) { const inv = c.invoices.find(i => i.id === t.invoiceId); if (inv) inv.payments = (inv.payments || []).filter(p => p.bankId !== t.id); } }
     if (t.status === 'matched') { const j = c.journals.find(j => j.id === t.journalId); if (j) delete j.bankMatched; }
     audit('Sent bank line back to review', t.desc.slice(0, 40), `was ${t.status}`);
@@ -1507,9 +1508,10 @@ ACT['bulk-all'] = el => { const c = C(); const ids = c.bank.filter(t => t.status
 ACT['bulk-clear'] = () => { UI.sel.clear(); render(); };
 ACT['bulk-cat'] = () => { const a = $('#bulkAcct').value; if (!a) return toast('Choose a category first', true); let n = 0; [...UI.sel].forEach(id => { const before = C().bank.find(t => t.id === id)?.status; doCat(id, a, { quiet: true }); if (C().bank.find(t => t.id === id)?.status !== before) n++; }); UI.sel.clear(); toast(`${n} lines posted to ${accName(C(), a)}`); render(); };
 ACT['bulk-exclude'] = () => { const c = C(); [...UI.sel].forEach(id => { const t = c.bank.find(x => x.id === id); if (t) t.status = 'excluded'; }); audit('Excluded bank lines', 'Bulk', `${UI.sel.size} lines`); toast(`${UI.sel.size} lines excluded`); UI.sel.clear(); render(); };
-ACT['rerun-rules'] = () => { const r = runAutomation(C(), C().bank.filter(t => t.status === 'review')); toast(`${r.inc + r.inv} money-in line${r.inc + r.inv === 1 ? '' : 's'} posted to income · ${r.out} money-out waiting for you`); render(); };
+ACT['rerun-rules'] = () => { const r = runAutomation(C(), C().bank.filter(t => t.status === 'review')); toast(`${r.inc + r.inv} money-in line${r.inc + r.inv === 1 ? '' : 's'} posted to income · ${r.exp} money-out line${r.exp === 1 ? '' : 's'} posted to expenses`); render(); };
 // Money in → income automatically. Money out → only suggested, never posted without approval.
 const defaultIncome = c => (c.defaultIncome && accOf(c, c.defaultIncome)) ? c.defaultIncome : (accOf(c, '4010') ? '4010' : '4000');
+const defaultExpense = c => (c.defaultExpense && accOf(c, c.defaultExpense)) ? c.defaultExpense : (accOf(c, '6980') ? '6980' : (c.accounts.find(x => x.type === 'expense' && x.sub === 'opex') || {}).code);
 function suggestFor(c, t) {
   if (t.amount > 0) return null;
   const r = applyRulesPeek(c, t);
@@ -1520,7 +1522,7 @@ function suggestFor(c, t) {
   return null;
 }
 function runAutomation(c, list) {
-  const res = { total: list.length, inc: 0, inv: 0, led: 0, out: 0, sugg: 0, locked: 0 };
+  const res = { total: list.length, inc: 0, inv: 0, led: 0, out: 0, exp: 0, sugg: 0, locked: 0 };
   for (const t of list) {
     if (lockedMsg(c, t.date)) { res.locked++; continue; }
     const lm = findLedgerMatch(c, t); if (lm) { t.status = 'matched'; t.journalId = lm.id; lm.bankMatched = t.id; res.led++; continue; }
@@ -1528,9 +1530,13 @@ function runAutomation(c, list) {
       const inv = matchInvoice(c, t); if (inv) { try { categorize(c, t, '1100', { invoice: inv }); res.inv++; continue; } catch (e) { } }
       const r = applyRules(c, t); const acct = r && accOf(c, r.acct)?.type === 'income' ? r.acct : defaultIncome(c);
       try { categorize(c, t, acct); t.auto = true; if (r?.party) t.party = r.party; res.inc++; } catch (e) { }
-    } else { res.out++; if (suggestFor(c, t)) res.sugg++; }
+    } else {
+      res.out++; const sg = suggestFor(c, t); if (sg) res.sugg++;
+      const acct = sg && accOf(c, sg.acct)?.type === 'expense' ? sg.acct : defaultExpense(c);
+      try { categorize(c, t, acct); t.auto = true; if (sg?.party) t.party = sg.party; res.exp++; } catch (e) { }
+    }
   }
-  if (list.length) audit('Ran automation', 'Bank lines', `${res.inc} money-in lines posted to income · ${res.inv} invoice matches · ${res.led} ledger matches · ${res.out} money-out lines left for review`);
+  if (list.length) audit('Ran automation', 'Bank lines', `${res.inc} money-in lines posted to income · ${res.exp} money-out lines posted to expenses · ${res.inv} invoice matches · ${res.led} ledger matches`);
   return res;
 }
 ACT['accept-sugg'] = () => {
@@ -1538,11 +1544,12 @@ ACT['accept-sugg'] = () => {
   c.bank.filter(t => t.status === 'review' && t.amount < 0).forEach(t => { const sg = suggestFor(c, t); if (sg) { try { categorize(c, t, sg.acct); if (sg.party) t.party = sg.party; n++; } catch (e) { } } });
   audit('Accepted suggestions', 'Bank lines', `${n} money-out lines`); toast(`${n} expense${n === 1 ? '' : 's'} posted from suggestions`); render();
 };
+CH['def-exp'] = el => { const c = C(); c.defaultExpense = el.value; audit('Changed default expense account', 'Bank', accName(c, el.value)); toast('Money out with no rule now goes to ' + accName(c, el.value)); };
 CH['def-inc'] = el => { const c = C(); c.defaultIncome = el.value; audit('Changed default income account', 'Bank', accName(c, el.value)); toast('Money in with no invoice now goes to ' + accName(c, el.value)); };
 ACT['mk-rule'] = el => { const c = C(); const t = c.bank.find(x => x.id === el.dataset.id); const kw = (t.party || t.desc.split(/[\/\-]/)[0]).toUpperCase().replace(/[^A-Z0-9 &]/g, '').split(/\s+/).filter(w => !/^(NIP|TRF|FROM|TO|POS|PURCHASE)$/.test(w)).slice(0, 2).join(' '); ruleModal({ match: kw, acct: '', dir: t.amount > 0 ? 'in' : 'out', fromTxn: t.id }); };
 function ruleModal(r = {}) {
   const c = C();
-  modal({ title: r.id ? 'Edit rule' : 'New bank rule', body: `<p class="muted" style="margin:0">When a statement remark contains this text, money out is suggested this category (you still approve it) and money in goes to this income account.</p>
+  modal({ title: r.id ? 'Edit rule' : 'New bank rule', body: `<p class="muted" style="margin:0">When a statement remark contains this text, the line is posted to this account automatically: money out to this expense, money in to this income account.</p>
     <div class="field"><label for="rMatch">Narration contains</label><input class="in" id="rMatch" value="${esc(r.match || '')}" placeholder="e.g. IKEDC or DIESEL|AGO"><span class="muted" style="font-size:12px">Separate alternatives with | . Not case-sensitive.</span></div>
     <div class="grid2"><div class="field"><label for="rAcct">Post to</label><select class="in" id="rAcct">${accOptions(c, r.acct, a => a.sub !== 'contra')}</select></div>
     <div class="field"><label for="rDir">Applies to</label><select class="in" id="rDir"><option value="">Money in and out</option><option value="in" ${r.dir === 'in' ? 'selected' : ''}>Money in only</option><option value="out" ${r.dir === 'out' ? 'selected' : ''}>Money out only</option></select></div></div>
@@ -1555,11 +1562,11 @@ ACT['save-rule'] = el => {
   const data = { match, acct, dir: $('#rDir').value, party: $('#rParty').value.trim() };
   if (el.dataset.id) Object.assign(c.rules.find(r => r.id === el.dataset.id), data); else c.rules.unshift({ id: uid('r'), hits: 0, ...data });
   audit(el.dataset.id ? 'Edited bank rule' : 'Created bank rule', match, '→ ' + accName(c, acct)); closeModal();
-  const r = runAutomation(c, c.bank.filter(t => t.status === 'review')); toast(`Rule saved · ${r.sugg} waiting payment${r.sugg === 1 ? ' has' : 's have'} a suggestion`); render();
+  const r = runAutomation(c, c.bank.filter(t => t.status === 'review')); toast(`Rule saved · applies to new lines automatically${r.total ? ` · ${r.total} waiting line${r.total === 1 ? '' : 's'} posted` : ''}`); render();
 };
 function bankRules(c) {
-  return `<div class="card" style="margin-bottom:16px"><div class="card-b"><div class="grid2" style="align-items:end"><div class="field"><label for="defInc">Money in with no matching invoice is posted to</label><select class="in" id="defInc" data-ch="def-inc">${accOptions(c, defaultIncome(c), a => a.type === 'income', '')}</select></div><p class="muted" style="margin:0;font-size:12.5px">Money in is categorised as income automatically. Money out is only suggested from the rules below and waits for your approval.</p></div></div></div>
-  <div class="card"><div class="toolbar"><div class="l"><b>${c.rules.length} rules</b><span class="muted">Used to suggest categories for money out (and to pick the income account for money in). First match wins.</span></div><div class="rt"><button class="btn pri sm" data-act="new-rule">${ic('plus', 14)} New rule</button></div></div>
+  return `<div class="card" style="margin-bottom:16px"><div class="card-b"><div class="grid2" style="align-items:end"><div class="field"><label for="defInc">Money in with no matching invoice is posted to</label><select class="in" id="defInc" data-ch="def-inc">${accOptions(c, defaultIncome(c), a => a.type === 'income', '')}</select></div><div class="field"><label for="defExp">Money out with no matching rule is posted to</label><select class="in" id="defExp" data-ch="def-exp">${accOptions(c, defaultExpense(c), a => a.type === 'expense', '')}</select></div></div><p class="muted" style="margin:12px 0 0;font-size:12.5px">Every money-in line is posted to income and every money-out line is posted to expenses, automatically. The rules below (and earlier payments to the same payee) pick the exact category. You can change any line later with “Change”.</p></div></div>
+  <div class="card"><div class="toolbar"><div class="l"><b>${c.rules.length} rules</b><span class="muted">Used to pick the expense category for money out and the income account for money in. First match wins.</span></div><div class="rt"><button class="btn pri sm" data-act="new-rule">${ic('plus', 14)} New rule</button></div></div>
   <div class="tbl-wrap"><table class="t"><thead><tr><th>Narration contains</th><th>Applies to</th><th>Post to</th><th class="r">Times used</th><th></th></tr></thead><tbody>
   ${c.rules.map(r => `<tr><td class="mono" style="max-width:380px;word-break:break-word">${esc(r.match)}</td><td>${r.dir === 'in' ? 'Money in' : r.dir === 'out' ? 'Money out' : 'Both'}</td><td>${esc(accName(c, r.acct))}${r.party ? `<small class="muted" style="display:block">Payee → ${esc(r.party)}</small>` : ''}</td><td class="r">${r.hits || 0}</td><td class="nowrap"><button class="btn sm ghost" data-act="edit-rule" data-id="${r.id}">Edit</button><button class="btn sm ghost danger" data-act="del-rule" data-id="${r.id}">Delete</button></td></tr>`).join('')}
   </tbody></table></div></div>`;
@@ -1604,7 +1611,7 @@ function bankImport(c) {
     <div class="row"><button class="btn pri" data-act="parse-paste">Read pasted rows</button><button class="btn" data-act="sample-stmt">${ic('spark', 15)} Try a sample statement</button></div>
   </div></div>
   <div class="card"><div class="card-h"><h3>What happens on import</h3></div><div class="card-b"><div class="list">
-    ${[['1', 'Columns detected', 'Date, narration, debit, credit and balance are found automatically. You can correct them before importing.'], ['2', 'Duplicates skipped', 'Lines already in the books are ignored, so re-uploading a statement is safe.'], ['3', 'Money in becomes income', 'Customer payments that match an open invoice mark it paid. All other money in is posted to income automatically (you choose the account under Bank rules).'], ['4', 'Money out waits for you', 'Payments are never posted automatically. Each one is suggested an expense category from its remark (diesel, DisCo, data, stamp duty, EMTL…) or from earlier payments to the same payee.'], ['5', 'You approve', 'Accept suggestions one by one or all at once, or pick another category. Save a rule to improve future suggestions.']].map(([n, t, d]) => `<div class="li"><span class="tag">${n}</span><div class="grow"><b style="font-weight:500">${t}</b><small>${d}</small></div></div>`).join('')}
+    ${[['1', 'Columns detected', 'Date, narration, debit, credit and balance are found automatically. You can correct them before importing.'], ['2', 'Duplicates skipped', 'Lines already in the books are ignored, so re-uploading a statement is safe.'], ['3', 'Money in becomes income', 'Customer payments that match an open invoice mark it paid. All other money in is posted to income automatically (you choose the account under Bank rules).'], ['4', 'Money out becomes expenses', 'Every payment out is posted to expenses automatically. The exact category comes from its remark (diesel, DisCo, data, stamp duty, EMTL…) or earlier payments to the same payee; anything else goes to General Business Expenses.'], ['5', 'Change anything', 'Click “Change” on any line to move it to another category, or save a rule so future lines go there automatically.']].map(([n, t, d]) => `<div class="li"><span class="tag">${n}</span><div class="grow"><b style="font-weight:500">${t}</b><small>${d}</small></div></div>`).join('')}
   </div></div></div></div>`;
   const det = imp.det; const txns = rowsToTxns(imp.rows, det); const sIn = txns.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0), sOut = txns.filter(t => t.amount < 0).reduce((s, t) => s - t.amount, 0);
   const seenD = {}; c.bank.forEach(b => { const k = b.date + '|' + r2(b.amount) + '|' + b.desc; seenD[k] = (seenD[k] || 0) + 1; });
@@ -1652,10 +1659,10 @@ ACT['imp-go'] = () => {
   if (c.bank.length && mKey(c.bank[0].date) < c.startMonth) c.startMonth = mKey(c.bank[0].date);
   audit('Imported bank statement', imp.name, `${added.length} new lines`);
   const r = DB.role === 'client' ? { total: added.length, rule: 0, inv: 0, led: 0, locked: 0 } : runAutomation(c, added);
-  UI.imp = null; UI.bankTab = DB.role === 'client' ? 'import' : 'txns'; UI.bankFilter = 'review'; render();
   const waiting = added.filter(t => t.status === 'review').length;
-  modal({ title: 'Statement imported', body: `<div class="kpis" style="grid-template-columns:repeat(2,minmax(0,1fr))">${kpi('New lines', added.length)}${kpi('Money in → income', r.inc)}${kpi('Matched to invoices', r.inv)}${kpi('Matched to payroll / tax / bills', r.led)}</div>
-    <div class="callout ${waiting ? 'warn' : 'good'}"><span class="ic">${ic(waiting ? 'info' : 'check', 18)}</span><div><b>${waiting ? `${waiting} payment${waiting > 1 ? 's' : ''} out need${waiting > 1 ? '' : 's'} your approval` : 'Everything was handled'}</b><p>${DB.role === 'client' ? 'Your accountant will categorise these.' : waiting ? `Money in was posted to income automatically. Money out is never posted without you: ${r.sugg} of ${r.out} have a suggested expense category from the remark — review and accept them.` : 'Reports are up to date.'}${r.locked ? ` ${r.locked} line(s) fall in the locked period and were left for review.` : ''}</p></div></div>`,
+  UI.imp = null; UI.bankTab = DB.role === 'client' ? 'import' : 'txns'; UI.bankFilter = waiting ? 'review' : 'all'; UI.bankMonth = ''; UI.bankSearch = ''; render();
+  modal({ title: 'Statement imported', body: `<div class="kpis" style="grid-template-columns:repeat(2,minmax(0,1fr))">${kpi('New lines', added.length)}${kpi('Money in → income', r.inc + r.inv)}${kpi('Money out → expenses', r.exp)}${kpi('Matched to invoices', r.inv)}${kpi('Matched to payroll / tax / bills', r.led)}</div>
+    <div class="callout ${waiting ? 'warn' : 'good'}"><span class="ic">${ic(waiting ? 'info' : 'check', 18)}</span><div><b>${waiting ? `${waiting} line${waiting > 1 ? 's' : ''} not posted` : 'Every line was posted'}</b><p>${DB.role === 'client' ? 'Your accountant will categorise these.' : waiting ? 'Pick a category for the lines left on the review tab.' : `Money in went to income and money out went to expenses. ${r.sugg} expense${r.sugg === 1 ? '' : 's'} got an exact category from the remark or payee; the rest went to ${esc(accName(c, defaultExpense(c)))}. Use “Change” on any line to move it.`}${r.locked ? ` ${r.locked} line(s) fall in the locked period and were left for review.` : ''}</p></div></div>`,
     foot: `<button class="btn pri" data-act="close-modal">Done</button>` });
 };
 
@@ -2064,7 +2071,7 @@ CH['rep-to'] = el => { UI.rep.to = el.value; render(); };
 CH['rep-cmp'] = el => { UI.rep.compare = el.checked; render(); };
 ACT['copy-report'] = () => { const t = $('.rep'); if (!t) return; copyText($$('tr', t).map(tr => $$('td', tr).map(td => td.innerText.trim()).join('\t')).join('\n'), 'Report'); };
 const curP = () => periodRange(UI.rep.preset, UI.rep.from, UI.rep.to);
-function repHead(c, title, sub) { return `<div class="rep-head"><div><img src="${GEO_WORD}" alt="Geoinfotech" style="height:40px;width:auto;display:block;margin-bottom:10px"><div class="co">${esc(c.name)}</div><div class="muted" style="font-size:12px">${[c.address, c.city, c.tin ? 'TIN ' + c.tin : '', c.rc].filter(Boolean).map(esc).join(' · ')}</div></div><div style="text-align:right"><h2>${title}</h2><div class="muted" style="font-size:12px">${sub}</div></div></div>`; }
+function repHead(c, title, sub) { return `<div class="rep-head"><div>${/geoinfotech/i.test(c.name) ? `<img src="${GEO_WORD}" alt="Geoinfotech" style="height:40px;width:auto;display:block;margin-bottom:10px">` : ((c.profiles || [])[0] || {}).logo ? `<img src="${c.profiles[0].logo}" alt="" style="height:40px;width:auto;display:block;margin-bottom:10px">` : ''}<div class="co">${esc(c.name)}</div><div class="muted" style="font-size:12px">${[c.address, c.city, c.tin ? 'TIN ' + c.tin : '', c.rc].filter(Boolean).map(esc).join(' · ')}</div></div><div style="text-align:right"><h2>${title}</h2><div class="muted" style="font-size:12px">${sub}</div></div></div>`; }
 const repRow = (label, v, pv, o = {}) => `<tr class="${o.cls || 'ln'} ${o.a ? 'dl' : ''}" ${o.a ? `data-act="drill" data-a="${o.a}"${o.from ? ` data-from="${o.from}"` : ''} data-to="${o.to || ''}"` : ''}><td>${label}</td><td class="r ${v < 0 ? 'neg' : ''}">${o.blank ? '' : acctFmt(v)}</td>${UI.rep.compare ? `<td class="r muted ${pv < 0 ? 'neg' : ''}">${o.blank ? '' : acctFmt(pv)}</td>` : ''}</tr>`;
 const repCols = (P, l1, l2) => `<tr class="hd"><td></td><td class="r">${l1}</td>${UI.rep.compare ? `<td class="r">${l2}</td>` : ''}</tr>`;
 
@@ -2211,7 +2218,7 @@ VIEWS.exec = () => {
   const H = (n, t) => `<h3 style="font-size:15px;margin:22px 0 8px">${n}. ${t}</h3>`;
   return `${ph('Executive summary', 'Accounting executive summary for management, built from the ledger', '')}${repBar()}
   <div class="paper"><div class="memo" style="max-width:none">
-  <div style="border-bottom:2px solid #15171c;padding-bottom:14px;margin-bottom:6px"><img src="${GEO_WORD}" alt="" style="height:42px;width:auto;display:block;margin-bottom:12px"><div style="font-size:18px;font-weight:700;letter-spacing:.02em">${esc(NAME)}</div><div style="font-size:14px;font-weight:600;letter-spacing:.08em;color:#4b515d">ACCOUNTING EXECUTIVE SUMMARY</div><div class="muted" style="font-size:12.5px;margin-top:4px">Reporting period: ${P.label} · compared with ${P.plabel} · prepared by ${esc(userName())}, ${dLabel(TODAY)}</div></div>
+  <div style="border-bottom:2px solid #15171c;padding-bottom:14px;margin-bottom:6px">${/geoinfotech/i.test(c.name) ? `<img src="${GEO_WORD}" alt="" style="height:42px;width:auto;display:block;margin-bottom:12px">` : ((c.profiles || [])[0] || {}).logo ? `<img src="${c.profiles[0].logo}" alt="" style="height:42px;width:auto;display:block;margin-bottom:12px">` : ''}<div style="font-size:18px;font-weight:700;letter-spacing:.02em">${esc(NAME)}</div><div style="font-size:14px;font-weight:600;letter-spacing:.08em;color:#4b515d">ACCOUNTING EXECUTIVE SUMMARY</div><div class="muted" style="font-size:12.5px;margin-top:4px">Reporting period: ${P.label} · compared with ${P.plabel} · prepared by ${esc(userName())}, ${dLabel(TODAY)}</div></div>
   ${H(1, 'Overview')}<p>This report provides a summary of ${esc(name)}’s financial performance for ${P.label}, covering revenue, expenditure, profitability, cash flow, outstanding receivables and payables, and key financial issues requiring management attention.</p><p>The objective is to provide management with a clear understanding of the company’s financial position and support informed decision-making regarding cost control, resource allocation and business growth.</p>
   ${H(2, 'Financial Performance Summary')}
   <div style="overflow-x:auto"><table class="rep"><tr class="hd"><td>Financial item</td><td class="r">Amount (₦)</td><td class="r">Previous (₦)</td><td class="r">Change</td></tr>
@@ -2797,7 +2804,7 @@ ACT['start-fresh'] = () => {
 function prepareDB() {
   if (!DB || !DB.clients?.length || DB.clients.some(c => c.sample)) DB = freshDB(); DB.v = 3;
   DB.clients.forEach(c => (c.profiles || []).forEach(p => { if (!p.logo && /geoinfotech/i.test(p.name)) p.logo = GEO_MARK; }));
-  DB.clients.forEach(c => { if (c.name === 'Geoinfotech Holdings') c.name = 'Geoinfotech Resources Limited'; (c.profiles || []).forEach(p => { if (p.name === 'Geoinfotech Holdings') { p.name = 'Geoinfotech Resources Limited'; if (/Geospatial/.test(p.tagline || '')) p.tagline = 'Geoservices · GeoInfo Academy · Geo Store'; } }); DEFAULT_COA.forEach(([code, name, type, sub]) => { if (!c.accounts.some(a => a.code === code)) c.accounts.push({ code, name, type, sub }); }); c.accounts.sort((a, b) => a.code.localeCompare(b.code)); if (c.tax && c.tax.whtPay == null) c.tax.whtPay = 10; c.receipts = c.receipts || []; });
+  DB.clients.forEach(c => { if (c.name === 'Geoinfotech Holdings') c.name = 'Geoinfotech Resources Limited'; (c.profiles || []).forEach(p => { if (p.name === 'Geoinfotech Holdings') { p.name = 'Geoinfotech Resources Limited'; if (/Geospatial/.test(p.tagline || '')) p.tagline = 'Geoservices · GeoInfo Academy · Geo Store'; } }); DEFAULT_COA.forEach(([code, name, type, sub]) => { if (!c.accounts.some(a => a.code === code)) c.accounts.push({ code, name, type, sub }); }); c.accounts.sort((a, b) => a.code.localeCompare(b.code)); if (c.tax && c.tax.whtPay == null) c.tax.whtPay = 10; c.receipts = c.receipts || []; if (!c.autoOutV1) { c.autoOutV1 = true; const wait = c.bank.filter(t => t.status === 'review'); if (wait.length && typeof runAutomation === 'function') runAutomation(c, wait); } });
 }
 let booted = false;
 function bootApp() {
