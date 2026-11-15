@@ -395,6 +395,41 @@ html.signed #auth{display:none}
 .ws .ak-logo{margin:2px 0 5px}
 .auth-brand .lg img{height:30px;width:auto}
 .auth-card .mlogo .ak-logo{height:26px}
+/* ---------- Records & history ---------- */
+.rec-in{color:var(--good)} .rec-out{color:var(--bad)}
+.rec-browse .card-b{display:flex;flex-direction:column;gap:14px}
+.rec-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.rec-bar .rt{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.rec-bar .seg{flex-wrap:wrap}
+.rec-cal{display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line-2);padding-top:14px}
+.rec-yr{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.rec-months{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:6px}
+.rec-mbtn{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px;border:1px solid var(--line);border-radius:10px;background:var(--surface);cursor:pointer;color:var(--ink);min-width:0}
+.rec-mbtn b{font-size:12.5px;font-weight:600}
+.rec-mbtn span{font-size:11.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.rec-mbtn:hover:not([disabled]){background:var(--surface-2);border-color:var(--ink-3)}
+.rec-mbtn.none{background:var(--surface-2)} .rec-mbtn.none b{color:var(--ink-3);font-weight:500}
+.rec-mbtn.on,.rec-mbtn.on:hover:not([disabled]){background:var(--primary);border-color:var(--primary)} .rec-mbtn.on b,.rec-mbtn.on span{color:var(--primary-ink)}
+.rec-mbtn[disabled]{opacity:.4;cursor:default}
+.chipbtn .ct{font-size:11px;opacity:.7;margin-left:3px;font-variant-numeric:tabular-nums}
+.chipbtn[disabled]{cursor:default}
+.rec-yh td{background:var(--surface-3);font-weight:700;font-size:15px;letter-spacing:-.01em;padding-top:12px;padding-bottom:12px}
+.rec-mh td{background:var(--surface-2);padding-top:9px;padding-bottom:9px}
+.rec-mh-in{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px}
+.rec-mh-in .sp{flex:1}
+.rec-mh-in .btn.sm{height:28px}
+.rec-t-table tr.rec-nd td{border-top:1px solid var(--line)}
+.rec-t-table tbody tr:not(.rec-nd):not(.rec-mh):not(.rec-yh) td{border-top-color:transparent}
+.rec-date b{font-weight:600;font-size:12.5px}
+.rec-desc{display:block;max-width:420px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rec-t{display:inline-block;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:6px;background:var(--surface-3);color:var(--ink-2)}
+.rec-bank{background:var(--accent-soft);color:var(--accent-ink)}
+.rec-invoice,.rec-receipt{background:var(--good-soft);color:var(--good)}
+.rec-bill,.rec-tax{background:var(--warn-soft);color:var(--warn)}
+.rec-payroll{background:color-mix(in srgb,var(--c-5) 16%,transparent);color:var(--c-5)}
+@media (max-width:900px){.rec-months{grid-template-columns:repeat(6,minmax(0,1fr))}}
+@media (min-width:601px){.rec-t-table .sm-only{display:none}}
+@media (max-width:600px){.rec-t-table .hm{display:none}.rec-t-table .sm-only{display:block}.rec-t-table td{padding-left:8px;padding-right:8px}.rec-t-table td[style*=min-width]{min-width:0!important}.rec-desc{white-space:normal;max-width:none!important;word-break:break-word}.rec-t-table .rec-t{font-size:10.5px;padding:1px 6px}.rec-t-table td.r{font-size:12.5px}.rec-months{grid-template-columns:repeat(4,minmax(0,1fr))}.rec-mh-in .hide-sm{display:none}.rec-desc{max-width:220px}}
 </style>
 
 <div class="app">
@@ -1155,7 +1190,7 @@ const UI = { ovPeriod: 'month', trend: 'monthly', bankTab: 'txns', bankFilter: '
   rep: { preset: 'lastmonth', from: null, to: null, compare: true }, jSource: 'all', jSearch: '', jLimit: 80, ledger: { a: '1000', from: null, to: null }, tbDate: null,
   payTab: 'employees', taxFilter: 'open', setTab: 'company', imp: null, draft: null, budgetMonth: null, auditSearch: '', clientsTab: 'all' };
 const NAV = [
-  ['Business', [['overview', 'Overview', 'home'], ['bank', 'Bank & statements', 'bank'], ['invoices', 'Invoices', 'invoice'], ['bills', 'Bills & expenses', 'bill']]],
+  ['Business', [['overview', 'Overview', 'home'], ['bank', 'Bank & statements', 'bank'], ['invoices', 'Invoices', 'invoice'], ['bills', 'Bills & expenses', 'bill'], ['records', 'Records & history', 'history']]],
   ['Accounting', [['coa', 'Chart of accounts', 'list'], ['journals', 'Journal entries', 'book'], ['ledger', 'General ledger', 'ledger'], ['tb', 'Trial balance', 'scale'], ['assets', 'Fixed assets', 'asset']]],
   ['Reports', [['exec', 'Executive summary', 'memo'], ['is', 'Income statement', 'chart'], ['bs', 'Financial position', 'pie'], ['cf', 'Cash flow', 'flow'], ['notes', 'Notes to the accounts', 'notes'], ['budget', 'Budget & cost plan', 'target']]],
   ['People & tax', [['payroll', 'Payroll', 'users'], ['tax', 'Tax centre', 'shield']]],
@@ -2428,6 +2463,113 @@ ACT['export-budget'] = () => { const t = $('#view table.t'); if (!t) return; con
 ACT['export-run'] = el => { const c = C(); const r = c.payruns.find(x => x.month === el.dataset.m); const emp = id => c.employees.find(e => e.id === id) || {}; const rows = [['Full name', 'Type', 'Role', 'Phone', 'Joined', 'Left', 'Basic', 'Allowances', 'Commission', 'Gross pay', 'Employee pension', 'PAYE', 'WHT', 'Net pay', 'Employer pension', 'Bank']].concat(r.rows.map(x => { const e = emp(x.id); return [x.name, (x.type || e.type) === 'contractor' ? 'Contract (WHT)' : 'Employee (PAYE)', x.role, e.phone || '', e.joined || '', e.left || '', x.basic ?? x.gross, x.allow || 0, x.comm || 0, x.gross, x.pen, x.paye, x.wht || 0, x.net, x.penEr, e.bank || '']; })); const t = r.totals; rows.push(['Total', '', '', '', '', '', t.basic ?? t.gross, t.allow || 0, t.comm || 0, t.gross, t.pen, t.paye, t.wht || 0, t.net, t.penEr, '']); saveXlsx(`${slug(c.name)}_Payroll_${r.month}.xlsx`, [{ name: 'Payroll ' + r.month, rows }]); };
 ACT['slip-pdf'] = () => { const el = $('#modal-root .paper'); if (!el) return; const t = $('#modal-root .modal-h h3').innerText.replace('Payslip · ', ''); elementToPdf(el, `Payslip_${slug(t)}.pdf`, 640); };
 ACT['export-tax'] = () => { const c = C(); const rows = [['Tax', 'Description', 'Authority', 'Period', 'Due date', 'Amount', 'Status', 'Filed on', 'Reference']].concat(obligations(c).map(o => [o.type, TAXINFO[o.type].name, TAXINFO[o.type].auth, o.periodLabel, o.due, o.amount, { filed: 'Filed', overdue: 'Overdue', soon: 'Due soon', upcoming: 'Upcoming' }[o.state], o.filing?.date || '', o.filing?.ref || ''])); saveXlsx(`${slug(c.name)}_Tax_schedule_${TODAY}.xlsx`, [{ name: 'Tax schedule', rows }]); };
+/* ================= Records & history: every entry in one timeline, by year, month and day ================= */
+UI.rec = { period: 'month', from: null, to: null, type: 'all', q: '', year: TODAY.slice(0, 4), limit: 250 };
+const REC_TYPES = [['all', 'All'], ['bank', 'Bank'], ['invoice', 'Invoices'], ['receipt', 'Receipts'], ['bill', 'Bills'], ['payroll', 'Payroll'], ['tax', 'Tax'], ['journal', 'Journals']];
+const REC_LABEL = { bank: 'Bank', invoice: 'Invoice', receipt: 'Receipt', bill: 'Bill', payroll: 'Payroll', tax: 'Tax filing', journal: 'Journal' };
+const REC_STATUS = { review: ['For review', 'warn'], categorized: ['Categorised', 'good'], matched: ['Matched', 'good'], excluded: ['Excluded', ''], draft: ['Draft', ''], void: ['Void', ''], paid: ['Paid', 'good'], partial: ['Part paid', 'acc'], overdue: ['Overdue', 'bad'], awaiting: ['Awaiting payment', 'acc'], sent: ['Sent', 'acc'], open: ['Unpaid', 'acc'], issued: ['Issued', 'good'], posted: ['Posted', 'good'], filed: ['Filed', 'good'], reversed: ['Reversed', ''] };
+const JOURNAL_ONLY = ['manual', 'opening', 'depreciation', 'reversal', 'asset'];
+
+function allRecords(c) {
+  const out = [];
+  const add = r => { if (r.date) out.push(r); };
+  c.bank.forEach(t => add({ date: t.date, type: 'bank', ref: '', desc: (typeof prettyDesc === 'function' ? prettyDesc(t.desc) : t.desc) || t.desc, party: t.party || '', note: t.account ? accName(c, t.account) : '', amount: Math.abs(t.amount), dir: t.amount >= 0 ? 'in' : 'out', status: t.status, act: t.journalId ? `data-act="view-journal" data-id="${t.journalId}"` : `data-act="rec-bank" data-id="${t.id}"` }));
+  c.invoices.forEach(i => { const s = invStatus(i); add({ date: i.date, type: 'invoice', ref: i.no || '', desc: (i.items && i.items[0] && i.items[0].desc) || 'Invoice', party: custOf(c, i.customerId)?.name || '', note: '', amount: invTotals(i).total, dir: 'bill', status: s, act: `data-act="view-invoice" data-id="${i.id}"` }); });
+  (c.receipts || []).forEach(r => add({ date: r.date, type: 'receipt', ref: r.no || '', desc: r.desc || 'Payment received', party: custOf(c, r.customerId)?.name || r.payer || '', note: r.method || '', amount: r.amount, dir: 'in', status: 'issued', act: `data-act="view-receipt" data-id="${r.id}"` }));
+  c.bills.forEach(b => add({ date: b.date, type: 'bill', ref: b.no || '', desc: b.desc || b.memo || accName(c, b.acct) || 'Bill', party: b.vendor || '', note: accName(c, b.acct) || '', amount: billTotals(b).total, dir: 'bill', status: billStatus(b), act: `data-act="rec-bill" data-id="${b.id}"` }));
+  c.payruns.forEach(r => add({ date: r.date, type: 'payroll', ref: 'PR-' + r.month, desc: `Payroll – ${mLabel(r.month, true)}`, party: `${r.rows.length} ${r.rows.length === 1 ? 'person' : 'people'}`, note: `Gross ${money(r.totals.gross)}`, amount: r.totals.net, dir: 'out', status: 'posted', act: `data-act="view-run" data-m="${r.month}"` }));
+  Object.entries(c.filings || {}).forEach(([key, f]) => { const [type, period] = key.split(':'); add({ date: f.date, type: 'tax', ref: f.ref || '', desc: `${type} ${period && period.length === 7 ? 'for ' + mLabel(period, true) : period ? 'for ' + period : ''}`.trim(), party: type === 'PAYE' ? 'State IRS' : type === 'Pension' ? 'Pension fund' : 'NRS (Rev360)', note: '', amount: f.amount || 0, dir: f.amount ? 'out' : 'none', status: 'filed', act: f.journalId ? `data-act="view-journal" data-id="${f.journalId}"` : `data-act="nav" data-r="tax"` }); });
+  c.journals.filter(j => JOURNAL_ONLY.includes(j.source)).forEach(j => add({ date: j.date, type: 'journal', ref: j.no, desc: j.memo || SRC_LABEL[j.source] || 'Journal entry', party: j.party || '', note: SRC_LABEL[j.source] || '', amount: r2(j.lines.reduce((s, l) => s + (l.dr || 0), 0)), dir: 'none', status: j.reversedBy ? 'reversed' : 'posted', act: `data-act="view-journal" data-id="${j.id}"`, at: j.at }));
+  const order = { bank: 1, receipt: 2, invoice: 3, bill: 4, payroll: 5, tax: 6, journal: 7 };
+  return out.sort((a, b) => b.date.localeCompare(a.date) || order[a.type] - order[b.type] || String(b.ref).localeCompare(String(a.ref)));
+}
+function recRange() {
+  const R = UI.rec, y = TODAY.slice(0, 4);
+  if (R.period === 'today') return { from: TODAY, to: TODAY, label: 'Today, ' + dLabel(TODAY) };
+  if (R.period === 'week') { const d = s2d(TODAY); const back = (d.getDay() + 6) % 7; const f = addDays(TODAY, -back); return { from: f, to: TODAY, label: `This week · ${dLabel(f)} – ${dLabel(TODAY)}` }; }
+  if (R.period === 'month') return { from: mStart(mKey(TODAY)), to: TODAY, label: mLabel(mKey(TODAY), true) };
+  if (R.period === 'year') return { from: y + '-01-01', to: TODAY, label: 'Year ' + y };
+  if (R.period === 'all') return { from: null, to: null, label: 'All records' };
+  const f = R.from || y + '-01-01', t = R.to || TODAY;
+  let label = `${dLabel(f)} – ${dLabel(t)}`;
+  if (f === t) label = dLabel(f); else if (f === mStart(mKey(f)) && t === mEnd(mKey(f))) label = mLabel(mKey(f), true); else if (f.slice(5) === '01-01' && t.slice(5) === '12-31' && f.slice(0, 4) === t.slice(0, 4)) label = 'Year ' + f.slice(0, 4);
+  return { from: f, to: t, label };
+}
+function recFiltered(c) {
+  const R = UI.rec, P = recRange(), q = R.q.trim().toLowerCase();
+  const all = allRecords(c);
+  const inRange = all.filter(r => (!P.from || r.date >= P.from) && (!P.to || r.date <= P.to));
+  const list = inRange.filter(r => (R.type === 'all' || r.type === R.type) && (!q || `${REC_LABEL[r.type]} ${r.ref} ${r.desc} ${r.party} ${r.note} ${r.amount}`.toLowerCase().includes(q)));
+  return { all, inRange, list, P };
+}
+function cashMoves(c, from, to) {
+  const cc = cashCodes(c); let inn = 0, out = 0;
+  for (const j of c.journals) { if ((from && j.date < from) || (to && j.date > to) || j.source === 'opening') continue; const ls = j.lines.filter(l => cc.includes(l.a)); if (ls.length === j.lines.length) continue; ls.forEach(l => { inn += l.dr || 0; out += l.cr || 0; }); }
+  return { inn: r2(inn), out: r2(out) };
+}
+const recDay = s => s2d(s).toLocaleDateString('en-GB', { weekday: 'short' }) + ' ' + s2d(s).getDate();
+
+VIEWS.records = () => {
+  const c = C(); const R = UI.rec; const { all, inRange, list, P } = recFiltered(c);
+  const cm = cashMoves(c, P.from, P.to);
+  const years = [...new Set(all.map(r => r.date.slice(0, 4)).concat(TODAY.slice(0, 4)))].sort().reverse();
+  if (!years.includes(R.year)) R.year = years[0];
+  const perMonth = {}; all.forEach(r => { const k = r.date.slice(0, 7); perMonth[k] = (perMonth[k] || 0) + 1; });
+  const yearCount = all.filter(r => r.date.startsWith(R.year)).length;
+  const selMonth = R.period === 'custom' && R.from && R.to && R.from === mStart(mKey(R.from)) && R.to === mEnd(mKey(R.from)) ? mKey(R.from) : (R.period === 'month' ? mKey(TODAY) : '');
+  const selYear = R.period === 'custom' && R.from === R.year + '-01-01' && R.to === R.year + '-12-31';
+  const typeCount = t => t === 'all' ? inRange.length : inRange.filter(r => r.type === t).length;
+  const months = Array.from({ length: 12 }, (_, i) => `${R.year}-${pad(i + 1)}`);
+
+  // Group rows: year → month → day
+  let rows = ''; let curY = '', curM = '', curD = '';
+  const shown = list.slice(0, R.limit);
+  const mTot = {}; list.forEach(r => { const k = r.date.slice(0, 7); const t = mTot[k] = mTot[k] || { n: 0 }; t.n++; });
+  for (const r of shown) {
+    const y = r.date.slice(0, 4), m = r.date.slice(0, 7);
+    if (y !== curY) { curY = y; const multiYear = !P.from || P.from.slice(0, 4) !== (P.to || TODAY).slice(0, 4); if (multiYear) rows += `<tr class="rec-yh"><td colspan="6">${y}</td></tr>`; }
+    if (m !== curM) { curM = m; curD = ''; const mc = cashMoves(c, mStart(m), mEnd(m)); rows += `<tr class="rec-mh"><td colspan="6"><div class="rec-mh-in"><b>${mLabel(m, true)}</b><span class="muted">${mTot[m].n} record${mTot[m].n === 1 ? '' : 's'}</span><span class="sp"></span><span class="muted hide-sm">Bank in <b class="rec-in">${money(mc.inn)}</b> · out <b class="rec-out">${money(mc.out)}</b></span><button class="btn sm ghost" data-act="rec-month" data-m="${m}" title="Show only ${mLabel(m, true)}">${ic('filter', 13)}<span class="hide-sm">Only this month</span></button></div></td></tr>`; }
+    const newDay = r.date !== curD; curD = r.date;
+    const st = REC_STATUS[r.status] || [r.status || '', ''];
+    const amt = r.dir === 'in' ? `<span class="rec-in">+\u2009${money(r.amount)}</span>` : r.dir === 'out' ? `<span class="rec-out">−\u2009${money(r.amount)}</span>` : money(r.amount);
+    rows += `<tr class="click${newDay ? ' rec-nd' : ''}" ${r.act}><td class="nowrap rec-date">${newDay ? `<b>${recDay(r.date)}</b>` : ''}<span class="sm-only" style="margin-top:4px"><span class="rec-t rec-${r.type}">${REC_LABEL[r.type]}</span></span></td><td class="nowrap hm"><span class="rec-t rec-${r.type}">${REC_LABEL[r.type]}</span></td><td class="nowrap mono hm" style="font-size:12.5px">${esc(r.ref)}</td><td style="min-width:220px"><span class="rec-desc">${esc(r.desc)}</span>${r.party || r.note ? `<small class="muted" style="display:block">${esc([r.party, r.note].filter(Boolean).join(' · '))}</small>` : ''}<small class="muted sm-only">${esc([r.ref, st[0]].filter(Boolean).join(' · '))}</small></td><td class="nowrap hm">${st[0] ? `<span class="pill ${st[1]}">${esc(st[0])}</span>` : ''}</td><td class="r nowrap tnum">${amt}${r.dir === 'bill' ? `<small class="muted" style="display:block">${r.type === 'invoice' ? 'billed' : 'owed'}</small>` : ''}</td></tr>`;
+  }
+
+  const custom = R.period === 'custom';
+  return `${ph('Records & history', 'Every bank line, invoice, receipt, bill, payroll run, tax filing and journal, kept by year, month and day. Nothing is ever deleted, so you can always go back and check.', `<button class="btn" data-act="rec-xlsx">${ic('arrowdn', 15)} Excel</button>`)}
+  <div class="card rec-browse"><div class="card-b">
+    <div class="rec-bar"><div class="l">${seg('rec.period', R.period, [['today', 'Today'], ['week', 'This week'], ['month', 'This month'], ['year', 'This year'], ['all', 'All time'], ['custom', 'Pick dates']])}</div>
+    <div class="rt">${custom ? `<label class="lbl" for="recFrom">From</label><input type="date" class="in sm" style="width:auto" id="recFrom" data-ch="rec-from" value="${R.from || ''}"><label class="lbl" for="recTo">To</label><input type="date" class="in sm" style="width:auto" id="recTo" data-ch="rec-to" value="${R.to || TODAY}">` : ''}</div></div>
+    <div class="rec-cal"><div class="rec-yr"><label class="lbl" for="recYear">Browse year</label><select class="in sm" id="recYear" data-ch="rec-year" style="width:auto">${years.map(y => `<option ${y === R.year ? 'selected' : ''}>${y}</option>`).join('')}</select><button class="chipbtn ${selYear ? 'on' : ''}" data-act="rec-year-all" data-y="${R.year}">Whole of ${R.year} <span class="ct">${yearCount}</span></button></div>
+      <div class="rec-months">${months.map(k => { const n = perMonth[k] || 0; const fut = k > mKey(TODAY); return `<button class="rec-mbtn ${selMonth === k ? 'on' : ''} ${n ? '' : 'none'}" data-act="rec-month" data-m="${k}" ${fut ? 'disabled' : ''} title="${mLabel(k, true)}: ${n} record${n === 1 ? '' : 's'}"><b>${mLabel(k).split(' ')[0]}</b><span>${n || '–'}</span></button>`; }).join('')}</div></div>
+  </div></div>
+  <div class="kpis">${kpi('Records', list.length.toLocaleString(), esc(P.label), 'history')}${kpi('Bank money in', money(cm.inn), 'cash received in this period', 'arrowdn')}${kpi('Bank money out', money(cm.out), 'cash paid out in this period', 'arrowup')}${kpi('Net movement', `<span class="${cm.inn - cm.out < 0 ? 'rec-out' : 'rec-in'}">${money(r2(cm.inn - cm.out))}</span>`, cm.inn - cm.out < 0 ? 'more went out than came in' : 'more came in than went out', 'wallet')}</div>
+  <div class="card">
+    <div class="toolbar"><div class="l chips">${REC_TYPES.map(([k, l]) => { const n = typeCount(k); return `<button class="chipbtn ${R.type === k ? 'on' : ''}" data-act="rec-type" data-t="${k}" ${!n && k !== 'all' && R.type !== k ? 'disabled style="opacity:.5"' : ''}>${l} <span class="ct">${n}</span></button>`; }).join('')}</div>
+    <div class="rt"><div class="minisearch">${ic('search', 14)}<input class="in sm" id="recSearch" data-in="recSearch" placeholder="Search name, reference, amount" value="${esc(R.q)}"></div></div></div>
+    ${list.length ? `<div class="tbl-wrap"><table class="t rec-t-table"><thead><tr><th>Date</th><th class="hm">Type</th><th class="hm">Reference</th><th>Details</th><th class="hm">Status</th><th class="r">Amount</th></tr></thead><tbody>${rows}</tbody></table></div>
+      ${list.length > shown.length ? `<div style="padding:14px;text-align:center"><button class="btn" data-act="rec-more">Show more (${(list.length - shown.length).toLocaleString()} left)</button></div>` : `<div class="muted" style="padding:12px 16px;font-size:12.5px">Showing all ${list.length.toLocaleString()} record${list.length === 1 ? '' : 's'} for ${esc(P.label)}. Click any row to open it.</div>`}`
+      : `<div class="empty" style="padding:48px 20px"><b>${all.length ? 'No records match' : 'No records yet'}</b>${all.length ? `Nothing ${R.type !== 'all' ? 'of this type ' : ''}${R.q ? 'matches “' + esc(R.q) + '” ' : ''}for ${esc(P.label)}. Try another period${R.type !== 'all' || R.q ? ' or clear the filters' : ''}.${R.type !== 'all' || R.q ? '<div style="margin-top:10px"><button class="btn sm" data-act="rec-clear">Clear filters</button></div>' : ''}` : 'Upload a bank statement or create an invoice and it will appear here, filed under its date.'}</div>`}
+  </div>`;
+};
+ACT['rec-type'] = el => { UI.rec.type = el.dataset.t; UI.rec.limit = 250; render(); };
+ACT['rec-month'] = el => { const m = el.dataset.m; Object.assign(UI.rec, { period: 'custom', from: mStart(m), to: mEnd(m), year: m.slice(0, 4), limit: 250 }); render(); $('#content').scrollTop = 0; };
+ACT['rec-year-all'] = el => { const y = el.dataset.y; Object.assign(UI.rec, { period: 'custom', from: y + '-01-01', to: y + '-12-31', limit: 250 }); render(); };
+ACT['rec-more'] = () => { UI.rec.limit += 250; render(); };
+ACT['rec-clear'] = () => { UI.rec.type = 'all'; UI.rec.q = ''; render(); };
+ACT['rec-bank'] = el => { const c = C(); const t = c.bank.find(x => x.id === el.dataset.id); if (!t) return; Object.assign(UI, { bankTab: 'txns', bankFilter: 'all', bankMonth: mKey(t.date), bankSearch: (t.desc || '').slice(0, 40) }); go('bank'); };
+ACT['rec-bill'] = el => { const c = C(); const b = c.bills.find(x => x.id === el.dataset.id); UI.billTab = 'all'; if (b && 'billSearch' in UI) UI.billSearch = b.no; go('bills'); };
+CH['rec-from'] = el => { UI.rec.from = el.value || null; if (UI.rec.to && UI.rec.from && UI.rec.from > UI.rec.to) UI.rec.to = UI.rec.from; render(); };
+CH['rec-to'] = el => { UI.rec.to = el.value || null; if (UI.rec.from && UI.rec.to && UI.rec.to < UI.rec.from) UI.rec.from = UI.rec.to; render(); };
+CH['rec-year'] = el => { UI.rec.year = el.value; render(); };
+CH.recSearch = el => { UI.rec.q = el.value; UI.rec.limit = 250; clearTimeout(CH._rs); CH._rs = setTimeout(() => { const p = el.selectionStart; render(); const n = $('#recSearch'); if (n) { n.focus(); n.setSelectionRange(p, p); } }, 250); };
+ACT['rec-xlsx'] = () => {
+  const c = C(); const { list, P } = recFiltered(c);
+  if (!list.length) return toast('No records in this view to export', true);
+  const rows = [['Date', 'Month', 'Year', 'Type', 'Reference', 'Details', 'Party / note', 'Status', 'Money in', 'Money out', 'Billed / owed', 'Other']];
+  list.forEach(r => rows.push([r.date, mLabel(r.date.slice(0, 7), true), +r.date.slice(0, 4), REC_LABEL[r.type], r.ref, r.desc, [r.party, r.note].filter(Boolean).join(' · '), (REC_STATUS[r.status] || [r.status])[0], r.dir === 'in' ? r.amount : '', r.dir === 'out' ? r.amount : '', r.dir === 'bill' ? r.amount : '', r.dir === 'none' ? r.amount : '']));
+  saveXlsx(`${slug(c.name)}_Records_${(P.from || 'start')}_to_${(P.to || TODAY)}.xlsx`, [{ name: 'Records', rows }]);
+};
 /* ================= Payroll ================= */
 VIEWS.payroll = () => {
   const c = C(); const t = UI.payTab; const k = mKey(TODAY);
