@@ -808,7 +808,7 @@ function matchInvoice(c, t) {
 function findLedgerMatch(c, t) {
   // existing cash journal posted from inside the app (payroll, tax, bill payment, manual) not yet tied to a statement line
   const cc = cashCodes(c);
-  return c.journals.find(j => !j.bankMatched && ['payroll', 'tax', 'billpay', 'manual', 'payment', 'asset'].includes(j.source) && Math.abs(daysBetween(j.date, t.date)) <= 7 &&
+  return c.journals.find(j => !j.bankMatched && (['payroll', 'tax', 'billpay', 'manual', 'payment', 'asset'].includes(j.source) || (j.source === 'expense' && j.lines.some(l => l.a === '1000'))) && Math.abs(daysBetween(j.date, t.date)) <= 7 &&
     Math.abs(j.lines.filter(l => cc.includes(l.a)).reduce((s, l) => s + l.dr - l.cr, 0) - t.amount) < 1);
 }
 function categorize(c, t, acct, opt = {}) {
@@ -1190,7 +1190,7 @@ const UI = { ovPeriod: 'month', trend: 'monthly', bankTab: 'txns', bankFilter: '
   rep: { preset: 'lastmonth', from: null, to: null, compare: true }, jSource: 'all', jSearch: '', jLimit: 80, ledger: { a: '1000', from: null, to: null }, tbDate: null,
   payTab: 'employees', taxFilter: 'open', setTab: 'company', imp: null, draft: null, budgetMonth: null, auditSearch: '', clientsTab: 'all' };
 const NAV = [
-  ['Business', [['overview', 'Overview', 'home'], ['bank', 'Bank & statements', 'bank'], ['invoices', 'Invoices', 'invoice'], ['bills', 'Bills & expenses', 'bill'], ['records', 'Records & history', 'history']]],
+  ['Business', [['overview', 'Overview', 'home'], ['bank', 'Bank statements', 'bank'], ['invoices', 'Invoices', 'invoice'], ['bills', 'Bills & expenses', 'bill'], ['records', 'Records & history', 'history']]],
   ['Accounting', [['coa', 'Chart of accounts', 'list'], ['journals', 'Journal entries', 'book'], ['ledger', 'General ledger', 'ledger'], ['tb', 'Trial balance', 'scale'], ['assets', 'Fixed assets', 'asset']]],
   ['Reports', [['exec', 'Executive summary', 'memo'], ['is', 'Income statement', 'chart'], ['bs', 'Financial position', 'pie'], ['cf', 'Cash flow', 'flow'], ['notes', 'Notes to the accounts', 'notes'], ['budget', 'Budget & cost plan', 'target']]],
   ['People & tax', [['payroll', 'Payroll', 'users'], ['tax', 'Tax centre', 'shield']]],
@@ -1325,7 +1325,7 @@ ACT['ws-menu'] = el => {
 ACT['switch-client'] = el => { DB.active = el.dataset.id; invalidate(); UI.imp = null; UI.draft = null; UI.payPreview = null; $('#wsDD') && ($('#wsDD').hidden = true); toast('Switched to ' + C().name); go(route === 'invoice-edit' ? 'invoices' : route); };
 ACT['new-menu'] = () => {
   const dd = $('#newDD'); if (!dd.hidden) { dd.hidden = true; return; }
-  const items = [['new-invoice', 'invoice', 'Invoice', 'Bill a customer'], ['upload', 'upload', 'Upload bank statement', 'CSV or Excel'], ['new-bill', 'bill', 'Bill / expense', 'Record a supplier bill'], ['new-journal', 'book', 'Journal entry', 'Manual adjustment'], ['run-payroll', 'users', 'Run payroll', 'Monthly pay run']]
+  const items = [['new-invoice', 'invoice', 'Invoice', 'Bill a customer'], ['upload', 'upload', 'Upload bank statement', 'CSV or Excel'], ['new-bill', 'bill', 'Expense', 'Cash spending or a supplier bill'], ['new-journal', 'book', 'Journal entry', 'Manual adjustment'], ['run-payroll', 'users', 'Run payroll', 'Monthly pay run']]
     .filter(([a]) => DB.role !== 'client' || ['new-invoice', 'upload', 'new-bill'].includes(a));
   dd.innerHTML = items.map(([a, icn, l, s]) => `<button class="it" data-act="${a}">${ic(icn, 17)}<span><b style="font-weight:500">${l}</b><small>${s}</small></span></button>`).join('');
   dd.hidden = false;
@@ -1438,13 +1438,13 @@ VIEWS.overview = () => {
 };
 ACT['inv-tab'] = el => { UI.invTab = el.dataset.v; go('invoices'); };
 
-/* ================= Bank & statements ================= */
+/* ================= Bank statements ================= */
 VIEWS.bank = () => {
   const c = C(); const cnt = s => c.bank.filter(t => t.status === s).length; const isClient = DB.role === 'client';
   const tabList = isClient ? [['import', 'Upload statement']] : [['txns', 'Transactions', cnt('review') ? ` <span class="badge">${cnt('review')}</span>` : ''], ['import', 'Import statement'], ['rules', 'Bank rules'], ['reconcile', 'Reconcile']];
   if (isClient) UI.bankTab = 'import';
   const last = c.bank[c.bank.length - 1];
-  return `${ph('Bank & statements', `${esc(c.bankName || 'Main account')} · statement balance ${last ? money(last.balance ?? 0) : '—'} · ${c.reconciledTo ? 'reconciled to ' + dLabel(c.reconciledTo) : 'not reconciled yet'}`, isClient ? '' : `<button class="btn" data-act="rerun-rules">${ic('refresh', 15)} Categorise all</button><button class="btn pri" data-act="seg" data-name="bankTab" data-v="import">${ic('upload', 15)} Import statement</button>`)}
+  return `${ph('Bank statements', `${esc(c.bankName || 'Main account')} · statement balance ${last ? money(last.balance ?? 0) : '—'} · ${c.reconciledTo ? 'reconciled to ' + dLabel(c.reconciledTo) : 'not reconciled yet'}`, isClient ? '' : `<button class="btn" data-act="rerun-rules">${ic('refresh', 15)} Categorise all</button><button class="btn pri" data-act="seg" data-name="bankTab" data-v="import">${ic('upload', 15)} Import statement</button>`)}
   ${tabs('bankTab', UI.bankTab, tabList)}
   ${({ txns: bankTxns, import: bankImport, rules: bankRules, reconcile: bankRecon }[UI.bankTab] || bankTxns)(c)}`;
 };
@@ -1841,31 +1841,96 @@ function profileModal(p = {}, onSave) {
 }
 
 /* ================= Bills ================= */
+/* ================= Bills & expenses: picked up from bank statements, plus anything added by hand ================= */
+UI.expSrc = UI.expSrc || 'all'; UI.expMonth = UI.expMonth ?? mKey(TODAY); UI.expSearch = UI.expSearch || '';
+const isExpAcct = (c, code) => { const a = accOf(c, code); return a && a.type === 'expense'; };
+function expenseRows(c) {
+  const rows = [];
+  c.bank.filter(t => t.amount < 0 && t.status === 'categorized' && isExpAcct(c, t.account)).forEach(t => rows.push({ src: 'bank', id: t.id, date: t.date, payee: t.party || prettyDesc(t.desc), desc: t.desc, acct: t.account, amount: -t.amount, status: 'paid', auto: t.auto, journalId: t.journalId }));
+  (c.expenses || []).forEach(e => rows.push({ src: 'manual', id: e.id, date: e.date, payee: e.payee, desc: e.desc, acct: e.acct, amount: e.amount, status: 'paid', how: e.paidFrom, journalId: e.journalId, matched: !!c.journals.find(j => j.id === e.journalId)?.bankMatched }));
+  c.bills.forEach(b => { const bt = billTotals(b); rows.push({ src: 'bill', id: b.id, date: b.date, payee: b.vendor, desc: b.desc || b.no, acct: b.acct, amount: bt.total, status: billStatus(b), bill: b, journalId: b.journalId }); });
+  return rows.sort((x, y) => y.date.localeCompare(x.date));
+}
 VIEWS.bills = () => {
-  const c = C(); const t = UI.billTab; const list = c.bills.filter(b => t === 'all' || billStatus(b) === t).sort((a, b) => b.date.localeCompare(a.date));
-  const open = c.bills.filter(b => !b.paidOn); const od = open.filter(b => b.due < TODAY); const curK = mKey(TODAY);
-  const paidM = c.bills.filter(b => b.paidOn && mKey(b.paidOn) === curK).reduce((s, b) => s + billTotals(b).payable, 0);
-  return `${ph('Bills & expenses', 'Supplier bills with input VAT and withholding tax handled for you', `<button class="btn pri" data-act="new-bill">${ic('plus', 15, 2.2)} New bill</button>`)}
-  <div class="kpis" style="grid-template-columns:repeat(3,minmax(0,1fr))">${kpi('Unpaid bills', money0(open.reduce((s, b) => s + billTotals(b).payable, 0)), `<span>${open.length} open</span>`, 'clock')}${kpi('Overdue', `<span class="${od.length ? 'down' : ''}">${money0(od.reduce((s, b) => s + billTotals(b).payable, 0))}</span>`, `<span>${od.length} past due</span>`, 'alert')}${kpi('Paid this month', money0(paidM), `<span>${mLabel(curK, true)}</span>`, 'check')}</div>
-  <div class="callout"><span class="ic">${ic('info', 18)}</span><div><b>Day-to-day spending comes from your bank statement</b><p>Use bills for suppliers who invoice you on credit. WHT you deduct when paying is set aside for remittance in the Tax centre.</p></div></div>
-  <div class="card">${tabs('billTab', t, [['all', 'All'], ['open', 'Open'], ['overdue', 'Overdue'], ['paid', 'Paid']]).replace('class="tabs"', 'class="tabs" style="padding:0 12px"')}
-  <div class="tbl-wrap"><table class="t"><thead><tr><th>Bill</th><th>Supplier</th><th>Category</th><th>Status</th><th class="r">Total</th><th class="r">WHT</th><th class="r">You pay</th><th>Due</th><th></th></tr></thead><tbody>
-  ${list.map(b => { const bt = billTotals(b); const s = billStatus(b); return `<tr><td class="nowrap"><b style="font-weight:500">${esc(b.no)}</b><small class="muted" style="display:block">${dLabel(b.date)}</small></td><td>${partyCell(b.vendor, b.desc)}</td><td>${esc(accName(c, b.acct))}</td><td>${pill(s)}</td><td class="r">${money(bt.total)}</td><td class="r">${bt.wht ? money(bt.wht) + ` <span class="muted">(${b.wht}%)</span>` : '–'}</td><td class="r">${money(bt.payable)}</td><td class="nowrap ${s === 'overdue' ? 'down' : ''}">${b.paidOn ? 'Paid ' + dLabel(b.paidOn) : dLabel(b.due)}</td><td>${b.paidOn ? '' : `<button class="btn sm" data-act="pay-bill" data-id="${b.id}">Pay</button>`}</td></tr>`; }).join('') || `<tr><td colspan="9"><div class="empty"><b>No bills</b>Record supplier bills you pay on credit.</div></td></tr>`}
-  </tbody></table></div></div>`;
+  const c = C(); const all = expenseRows(c); const m = UI.expMonth; const q = UI.expSearch.trim().toLowerCase();
+  const inMonth = all.filter(r => !m || mKey(r.date) === m);
+  const list = inMonth.filter(r => (UI.expSrc === 'all' || r.src === UI.expSrc) && (!q || `${r.payee} ${r.desc} ${accName(c, r.acct)} ${r.amount}`.toLowerCase().includes(q)));
+  const sum = (arr) => arr.reduce((s, r) => s + r.amount, 0);
+  const fromBank = inMonth.filter(r => r.src === 'bank'), byHand = inMonth.filter(r => r.src !== 'bank');
+  const open = c.bills.filter(b => !b.paidOn); const openAmt = open.reduce((s, b) => s + billTotals(b).payable, 0);
+  const cats = {}; inMonth.forEach(r => cats[r.acct] = (cats[r.acct] || 0) + r.amount); const top = Object.entries(cats).sort((a, b) => b[1] - a[1])[0];
+  const months = [...new Set(all.map(r => mKey(r.date)).concat(mKey(TODAY)))].sort().reverse();
+  const label = m ? mLabel(m, true) : 'All months';
+  const srcTag = r => r.src === 'bank' ? `<span class="pill acc" title="Picked up automatically from your bank statement">${ic('bank', 12)} Bank statement</span>` : r.src === 'manual' ? `<span class="pill" title="${r.matched ? 'Added by hand and since matched to a bank statement line' : 'Added by hand'}">${ic('plus', 12)} ${r.how === 'cash' ? 'Cash' : 'Bank transfer'}${r.matched ? ' · matched' : ''}</span>` : pill(r.status === 'paid' ? 'paid' : r.status, r.status === 'paid' ? 'Bill · paid' : r.status === 'overdue' ? 'Bill · overdue' : 'Bill · unpaid');
+  const catCell = r => r.src === 'bill' ? esc(accName(c, r.acct)) : `<select class="in sm" style="min-width:200px;max-width:240px" data-ch="exp-cat" data-src="${r.src}" data-id="${r.id}" aria-label="Expense category">${accOptions(c, r.acct, a => a.type === 'expense', '')}</select>`;
+  const act = r => r.src === 'bill' ? (r.bill.paidOn ? '' : `<button class="btn sm" data-act="pay-bill" data-id="${r.id}">Pay</button>`) : r.src === 'manual' ? `<button class="btn sm ghost danger" data-act="del-exp" data-id="${r.id}" title="Delete this expense">Delete</button>` : `<button class="btn sm ghost" data-act="view-journal" data-id="${r.journalId}" title="See the posting">View</button>`;
+  return `${ph('Bills & expenses', 'Picked up automatically from your bank statements. Add anything that isn’t on a statement by hand.', `<button class="btn" data-act="exp-xlsx">${ic('arrowdn', 15)} Excel</button><button class="btn pri" data-act="new-bill">${ic('plus', 15, 2.2)} Add expense</button>`)}
+  <div class="kpis">${kpi('Total expenses', money0(sum(inMonth)), `<span>${esc(label)} · ${inMonth.length} item${inMonth.length === 1 ? '' : 's'}</span>`, 'arrowup')}${kpi('From bank statements', money0(sum(fromBank)), `<span>${fromBank.length} payment${fromBank.length === 1 ? '' : 's'} picked up automatically</span>`, 'bank')}${kpi('Added by hand', money0(sum(byHand)), `<span>${byHand.length} cash, transfer or bill item${byHand.length === 1 ? '' : 's'}</span>`, 'plus')}${kpi(top ? 'Biggest category' : 'Unpaid bills', top ? esc(accName(c, top[0])) : money0(openAmt), top ? `<span>${money0(top[1])} · ${Math.round(top[1] / (sum(inMonth) || 1) * 100)}% of spending</span>` : `<span>${open.length} open</span>`, top ? 'chart' : 'clock')}</div>
+  ${openAmt ? `<div class="callout warn"><span class="ic">${ic('clock', 18)}</span><div style="flex:1"><b>${open.length} supplier bill${open.length === 1 ? '' : 's'} not paid yet · ${money0(openAmt)}</b><p>When you pay, the bank statement line is matched to the bill automatically, so it’s only counted once.</p></div><button class="btn sm" data-act="exp-src" data-v="bill">See bills</button></div>` : ''}
+  <div class="card">
+    <div class="toolbar"><div class="l">${seg('expSrc', UI.expSrc, [['all', `All (${inMonth.length})`], ['bank', `From bank statements (${fromBank.length})`], ['manual', `Added by hand (${inMonth.filter(r => r.src === 'manual').length})`], ['bill', `Supplier bills (${inMonth.filter(r => r.src === 'bill').length})`]])}</div>
+      <div class="rt"><select class="in sm" style="width:auto" data-ch="exp-month" aria-label="Month"><option value="">All months</option>${months.map(k => `<option value="${k}" ${k === m ? 'selected' : ''}>${mLabel(k, true)}</option>`).join('')}</select><div class="minisearch">${ic('search', 14)}<input class="in sm" id="expSearch" data-in="expSearch" placeholder="Search payee, category, amount" value="${esc(UI.expSearch)}"></div></div></div>
+    <div class="tbl-wrap"><table class="t"><thead><tr><th>Date</th><th>Paid to</th><th>Category</th><th>Source</th><th class="r">Amount</th><th></th></tr></thead><tbody>
+    ${list.slice(0, 400).map(r => `<tr><td class="nowrap">${dLabel(r.date)}</td><td style="min-width:200px;max-width:340px">${partyCell(r.payee, r.desc && r.desc !== r.payee ? r.desc : '')}</td><td>${catCell(r)}${r.auto ? ' <span class="tag" title="Category picked automatically">auto</span>' : ''}</td><td class="nowrap">${srcTag(r)}</td><td class="r nowrap"><b style="font-weight:600">${money(r.amount)}</b>${r.src === 'bill' && r.bill.wht ? `<small class="muted" style="display:block">less WHT ${money(billTotals(r.bill).wht)}</small>` : ''}</td><td class="nowrap r">${act(r)}</td></tr>`).join('') || `<tr><td colspan="6"><div class="empty"><b>${all.length ? 'Nothing here for ' + esc(label) : 'No expenses yet'}</b>${all.length ? 'Pick another month or source.' : 'Upload a bank statement and every payment out appears here automatically, or click “Add expense”.'}${!all.length ? `<div style="margin-top:12px;display:flex;gap:8px;justify-content:center"><button class="btn pri sm" data-act="upload">${ic('upload', 14)} Upload bank statement</button><button class="btn sm" data-act="new-bill">${ic('plus', 14)} Add expense</button></div>` : ''}</div></td></tr>`}
+    </tbody>${list.length ? `<tfoot><tr><td colspan="4">${list.length} item${list.length === 1 ? '' : 's'}${list.length > 400 ? ' (showing 400)' : ''}</td><td class="r">${money(sum(list))}</td><td></td></tr></tfoot>` : ''}</table></div></div>`;
+};
+CH['exp-month'] = el => { UI.expMonth = el.value; render(); };
+ACT['exp-src'] = el => { UI.expSrc = el.dataset.v; UI.expMonth = ''; render(); };
+CH.expSearch = el => { UI.expSearch = el.value; clearTimeout(CH._es); CH._es = setTimeout(() => { const p = el.selectionStart; render(); const n = $('#expSearch'); if (n) { n.focus(); n.setSelectionRange(p, p); } }, 250); };
+function postExpense(c, e) {
+  const j = postJournal(c, { date: e.date, memo: `Expense – ${e.payee}${e.desc ? ' · ' + e.desc : ''}`, ref: e.ref || '', source: 'expense', srcId: e.id, party: e.payee, lines: [{ a: e.acct, dr: e.amount }, { a: e.paidFrom === 'cash' ? '1010' : '1000', cr: e.amount }] });
+  e.journalId = j.id; return j;
+}
+CH['exp-cat'] = el => {
+  const c = C(); if (!guard('bank', 'change expense categories')) { render(); return; } const acct = el.value;
+  attempt(() => {
+    if (el.dataset.src === 'bank') { const t = c.bank.find(x => x.id === el.dataset.id); categorize(c, t, acct); t.auto = false; audit('Changed expense category', t.party || prettyDesc(t.desc), accName(c, acct)); }
+    else { const e = c.expenses.find(x => x.id === el.dataset.id); const old = c.journals.find(j => j.id === e.journalId); if (old) { const lm = lockedMsg(c, old.date); if (lm) throw new Error(lm); if (old.bankMatched) { old.lines.forEach(l => { if (l.a === e.acct && l.dr) l.a = acct; }); e.acct = acct; invalidate(); } else { c.journals = c.journals.filter(j => j !== old); invalidate(); e.acct = acct; postExpense(c, e); } } audit('Changed expense category', e.payee, accName(c, acct)); }
+    toast('Moved to ' + accName(c, acct)); render();
+  });
+};
+ACT['del-exp'] = el => {
+  const c = C(); const e = c.expenses.find(x => x.id === el.dataset.id); if (!e) return;
+  modal({ title: 'Delete this expense?', body: `<p style="margin:0">${esc(e.payee)} · ${money(e.amount)} on ${dLabel(e.date)} will be removed from the books. The deletion is recorded in the audit trail.</p>`, foot: `<button class="btn" data-act="close-modal">Cancel</button><button class="btn pri" id="deGo">Delete</button>`,
+    onMount: () => $('#deGo').onclick = () => attempt(() => { const j = c.journals.find(x => x.id === e.journalId); if (j) { const lm = lockedMsg(c, j.date); if (lm) throw new Error(lm); if (j.bankMatched) { const t = c.bank.find(x => x.id === j.bankMatched); if (t) { t.status = 'review'; t.journalId = null; runAutomation(c, [t]); } } c.journals = c.journals.filter(x => x !== j); } c.expenses = c.expenses.filter(x => x !== e); invalidate(); audit('Deleted expense', e.payee, money(e.amount)); closeModal(); toast('Expense deleted'); render(); }) });
+};
+ACT['exp-xlsx'] = () => {
+  const c = C(); const m = UI.expMonth; const q = UI.expSearch.trim().toLowerCase();
+  const list = expenseRows(c).filter(r => (!m || mKey(r.date) === m) && (UI.expSrc === 'all' || r.src === UI.expSrc) && (!q || `${r.payee} ${r.desc} ${accName(c, r.acct)} ${r.amount}`.toLowerCase().includes(q)));
+  if (!list.length) return toast('Nothing to export', true);
+  const rows = [['Date', 'Paid to', 'Details', 'Category', 'Source', 'Status', 'Amount (₦)']];
+  list.forEach(r => rows.push([r.date, r.payee, r.desc || '', accName(c, r.acct), r.src === 'bank' ? 'Bank statement' : r.src === 'manual' ? (r.how === 'cash' ? 'Cash (added by hand)' : 'Bank transfer (added by hand)') : 'Supplier bill', r.src === 'bill' ? billStatus(r.bill) : 'paid', r.amount]));
+  rows.push(['', '', '', '', '', 'Total', r2(list.reduce((s, r) => s + r.amount, 0))]);
+  saveXlsx(`${slug(c.name)}_Expenses_${m || 'all'}.xlsx`, [{ name: 'Expenses', rows }]);
 };
 ACT['new-bill'] = () => {
-  $('#newDD').hidden = true; const c = C(); if (!guard('bill', 'record bills')) return;
-  modal({ title: 'New supplier bill', body: `<div class="grid2"><div class="field"><label for="bVen">Supplier</label><input class="in" id="bVen" list="venList" placeholder="Supplier name"><datalist id="venList">${c.vendors.map(v => `<option value="${esc(v)}">`).join('')}</datalist></div><div class="field"><label for="bNo">Bill / invoice number</label><input class="in" id="bNo"></div></div>
-    <div class="grid2"><div class="field"><label for="bDate">Bill date</label><input type="date" class="in" id="bDate" value="${TODAY}"></div><div class="field"><label for="bDue">Due date</label><input type="date" class="in" id="bDue" value="${addDays(TODAY, 30)}"></div></div>
-    <div class="grid2"><div class="field"><label for="bAcct">Expense category</label><select class="in" id="bAcct">${accOptions(c, '6950', a => a.type === 'expense' || a.sub === 'fixed' || a.sub === 'current')}</select></div><div class="field"><label for="bAmt">Amount before VAT (₦)</label><input class="in tnum" id="bAmt" inputmode="decimal" placeholder="0.00"></div></div>
-    <div class="grid2"><label class="chk"><input type="checkbox" id="bVat" checked> Supplier charged VAT (${c.tax.vat}%)</label><div class="field"><label for="bWht">WHT to deduct when paying</label><select class="in" id="bWht"><option value="0">None</option><option value="2">2% – supply of goods</option><option value="5">5% – services, contracts, rent</option><option value="10">10% – professional fees, directors' fees</option></select></div></div>
-    <div class="field"><label for="bDesc">Description</label><input class="in" id="bDesc"></div>`,
-    foot: `<button class="btn" data-act="close-modal">Cancel</button><button class="btn pri" id="bSave">Save bill</button>`,
-    onMount: () => $('#bSave').onclick = () => attempt(() => {
-      const vendor = $('#bVen').value.trim(), amount = r2(parseAmt($('#bAmt').value)); if (!vendor || !amount) throw new Error('Enter the supplier and amount');
-      const b = { id: uid('b'), vendor, no: $('#bNo').value.trim() || 'BILL-' + (c.bills.length + 1), date: $('#bDate').value, due: $('#bDue').value, acct: $('#bAcct').value, amount, vat: $('#bVat').checked, wht: +$('#bWht').value, desc: $('#bDesc').value.trim(), paidOn: null };
-      postBill(c, b); c.bills.push(b); if (!c.vendors.includes(vendor)) c.vendors.push(vendor); audit('Recorded bill', b.no, `${vendor} · ${money(billTotals(b).total)}`); closeModal(); toast('Bill saved'); go('bills');
-    }) });
+  $('#newDD').hidden = true; const c = C(); if (!guard('bill', 'record expenses')) return;
+  const how = UI.expHow || 'cash';
+  modal({ title: 'Add an expense', body: `<p class="muted" style="margin:0;font-size:13px">Payments on your bank statement are added automatically, so only add spending that isn’t on a statement yet.</p>
+    <div class="field"><span class="lbl">How was it paid?</span><div class="seg" role="tablist" id="xHow">${[['cash', 'Cash / petty cash'], ['bank', 'Bank transfer (not on a statement yet)'], ['bill', 'Not paid yet (supplier bill)']].map(([k, l]) => `<button type="button" class="${k === how ? 'on' : ''}" data-h="${k}">${l}</button>`).join('')}</div></div>
+    <div class="grid2"><div class="field"><label for="bVen">Paid to</label><input class="in" id="bVen" list="venList" placeholder="Supplier or person"><datalist id="venList">${[...new Set(c.vendors.concat((c.expenses || []).map(e => e.payee)))].map(v => `<option value="${esc(v)}">`).join('')}</datalist></div><div class="field"><label for="bDate">Date</label><input type="date" class="in" id="bDate" value="${TODAY}"></div></div>
+    <div class="grid2"><div class="field"><label for="bAcct">Expense category</label><select class="in" id="bAcct">${accOptions(c, '6950', a => a.type === 'expense' || (how === 'bill' && (a.sub === 'fixed' || a.sub === 'current')))}</select></div><div class="field"><label for="bAmt" id="bAmtL">Amount (₦)</label><input class="in tnum" id="bAmt" inputmode="decimal" placeholder="0.00"></div></div>
+    <div class="field"><label for="bDesc">What was it for?</label><input class="in" id="bDesc" placeholder="e.g. Fuel for site visit, office lunch"></div>
+    <div id="xBill" style="display:${how === 'bill' ? 'flex' : 'none'};flex-direction:column;gap:12px">
+      <div class="grid2"><div class="field"><label for="bNo">Bill / invoice number</label><input class="in" id="bNo"></div><div class="field"><label for="bDue">Due date</label><input type="date" class="in" id="bDue" value="${addDays(TODAY, 30)}"></div></div>
+      <div class="grid2"><label class="chk"><input type="checkbox" id="bVat" checked> Supplier charged VAT (${c.tax.vat}%)</label><div class="field"><label for="bWht">WHT to deduct when paying</label><select class="in" id="bWht"><option value="0">None</option><option value="2">2% – supply of goods</option><option value="5">5% – services, contracts, rent</option><option value="10">10% – professional fees, directors' fees</option></select></div></div></div>`,
+    foot: `<button class="btn" data-act="close-modal">Cancel</button><button class="btn pri" id="bSave">Save expense</button>`,
+    onMount: () => {
+      let h = how; const setH = k => { h = k; UI.expHow = k; [...document.querySelectorAll('#xHow button')].forEach(b => b.classList.toggle('on', b.dataset.h === k)); $('#xBill').style.display = k === 'bill' ? 'flex' : 'none'; $('#bAmtL').textContent = k === 'bill' ? 'Amount before VAT (₦)' : 'Amount (₦)'; };
+      [...document.querySelectorAll('#xHow button')].forEach(b => b.onclick = () => setH(b.dataset.h)); setH(h);
+      $('#bSave').onclick = () => attempt(() => {
+        const payee = $('#bVen').value.trim(), amount = r2(parseAmt($('#bAmt').value)), date = $('#bDate').value || TODAY, acct = $('#bAcct').value, desc = $('#bDesc').value.trim();
+        if (!payee || !amount) throw new Error('Enter who was paid and the amount'); if (!acct) throw new Error('Pick an expense category');
+        if (h === 'bill') {
+          const b = { id: uid('b'), vendor: payee, no: $('#bNo').value.trim() || 'BILL-' + (c.bills.length + 1), date, due: $('#bDue').value || addDays(date, 30), acct, amount, vat: $('#bVat').checked, wht: +$('#bWht').value, desc, paidOn: null };
+          postBill(c, b); c.bills.push(b); if (!c.vendors.includes(payee)) c.vendors.push(payee); audit('Recorded bill', b.no, `${payee} · ${money(billTotals(b).total)}`); toast('Supplier bill saved');
+        } else {
+          c.expenses = c.expenses || []; const e = { id: uid('x'), date, payee, acct, amount, desc, paidFrom: h, at: new Date().toISOString(), by: userName() };
+          postExpense(c, e); c.expenses.push(e); audit('Added expense', payee, `${money(amount)} · ${accName(c, acct)} · ${h === 'cash' ? 'cash' : 'bank transfer'}`); toast(h === 'cash' ? 'Cash expense added' : 'Expense added. When it shows on a bank statement it will be matched, not counted twice.');
+        }
+        closeModal(); UI.expMonth = mKey(date); UI.expSrc = 'all'; go('bills');
+      });
+    } });
 };
 ACT['pay-bill'] = el => {
   const c = C(); const b = c.bills.find(x => x.id === el.dataset.id); const t = billTotals(b);
@@ -1961,7 +2026,7 @@ ACT['new-acct'] = () => {
 };
 
 /* ================= Journals ================= */
-const SRC_LABEL = { opening: 'Opening', bank: 'Bank', invoice: 'Invoice', payment: 'Receipt', bill: 'Bill', billpay: 'Bill payment', payroll: 'Payroll', depreciation: 'Depreciation', tax: 'Tax remittance', manual: 'Manual', reversal: 'Reversal', asset: 'Asset' };
+const SRC_LABEL = { opening: 'Opening', bank: 'Bank', invoice: 'Invoice', payment: 'Receipt', bill: 'Bill', billpay: 'Bill payment', payroll: 'Payroll', depreciation: 'Depreciation', tax: 'Tax remittance', manual: 'Manual', reversal: 'Reversal', asset: 'Asset', expense: 'Expense' };
 VIEWS.journals = () => {
   const c = C(); const s = UI.jSource, q = UI.jSearch.toLowerCase();
   const list = c.journals.filter(j => (s === 'all' || j.source === s || (s === 'other' && ['opening', 'depreciation', 'asset', 'reversal', 'payment', 'billpay', 'bill'].includes(j.source))) && (!q || (j.no + ' ' + j.memo + ' ' + j.party + ' ' + j.ref).toLowerCase().includes(q))).sort((a, b) => b.date.localeCompare(a.date) || b.no.localeCompare(a.no));
@@ -2472,8 +2537,8 @@ ACT['slip-pdf'] = () => { const el = $('#modal-root .paper'); if (!el) return; c
 ACT['export-tax'] = () => { const c = C(); const rows = [['Tax', 'Description', 'Authority', 'Period', 'Due date', 'Amount', 'Status', 'Filed on', 'Reference']].concat(obligations(c).map(o => [o.type, TAXINFO[o.type].name, TAXINFO[o.type].auth, o.periodLabel, o.due, o.amount, { filed: 'Filed', overdue: 'Overdue', soon: 'Due soon', upcoming: 'Upcoming' }[o.state], o.filing?.date || '', o.filing?.ref || ''])); saveXlsx(`${slug(c.name)}_Tax_schedule_${TODAY}.xlsx`, [{ name: 'Tax schedule', rows }]); };
 /* ================= Records & history: every entry in one timeline, by year, month and day ================= */
 UI.rec = { period: 'month', from: null, to: null, type: 'all', q: '', year: TODAY.slice(0, 4), limit: 250 };
-const REC_TYPES = [['all', 'All'], ['bank', 'Bank'], ['invoice', 'Invoices'], ['receipt', 'Receipts'], ['bill', 'Bills'], ['payroll', 'Payroll'], ['tax', 'Tax'], ['journal', 'Journals']];
-const REC_LABEL = { bank: 'Bank', invoice: 'Invoice', receipt: 'Receipt', bill: 'Bill', payroll: 'Payroll', tax: 'Tax filing', journal: 'Journal' };
+const REC_TYPES = [['all', 'All'], ['bank', 'Bank'], ['invoice', 'Invoices'], ['receipt', 'Receipts'], ['bill', 'Expenses'], ['payroll', 'Payroll'], ['tax', 'Tax'], ['journal', 'Journals']];
+const REC_LABEL = { bank: 'Bank', invoice: 'Invoice', receipt: 'Receipt', bill: 'Expense', payroll: 'Payroll', tax: 'Tax filing', journal: 'Journal' };
 const REC_STATUS = { review: ['For review', 'warn'], categorized: ['Categorised', 'good'], matched: ['Matched', 'good'], excluded: ['Excluded', ''], draft: ['Draft', ''], void: ['Void', ''], paid: ['Paid', 'good'], partial: ['Part paid', 'acc'], overdue: ['Overdue', 'bad'], awaiting: ['Awaiting payment', 'acc'], sent: ['Sent', 'acc'], open: ['Unpaid', 'acc'], issued: ['Issued', 'good'], posted: ['Posted', 'good'], filed: ['Filed', 'good'], reversed: ['Reversed', ''] };
 const JOURNAL_ONLY = ['manual', 'opening', 'depreciation', 'reversal', 'asset'];
 
@@ -2484,6 +2549,7 @@ function allRecords(c) {
   c.invoices.forEach(i => { const s = invStatus(i); add({ date: i.date, type: 'invoice', ref: i.no || '', desc: (i.items && i.items[0] && i.items[0].desc) || 'Invoice', party: custOf(c, i.customerId)?.name || '', note: '', amount: invTotals(i).total, dir: 'bill', status: s, act: `data-act="view-invoice" data-id="${i.id}"` }); });
   (c.receipts || []).forEach(r => add({ date: r.date, type: 'receipt', ref: r.no || '', desc: r.desc || 'Payment received', party: custOf(c, r.customerId)?.name || r.payer || '', note: r.method || '', amount: r.amount, dir: 'in', status: 'issued', act: `data-act="view-receipt" data-id="${r.id}"` }));
   c.bills.forEach(b => add({ date: b.date, type: 'bill', ref: b.no || '', desc: b.desc || b.memo || accName(c, b.acct) || 'Bill', party: b.vendor || '', note: accName(c, b.acct) || '', amount: billTotals(b).total, dir: 'bill', status: billStatus(b), act: `data-act="rec-bill" data-id="${b.id}"` }));
+  (c.expenses || []).forEach(e => add({ date: e.date, type: 'bill', ref: '', desc: e.desc || 'Expense', party: e.payee, note: `${accName(c, e.acct)} · ${e.paidFrom === 'cash' ? 'cash' : 'bank transfer'}`, amount: e.amount, dir: 'out', status: 'paid', act: `data-act="view-journal" data-id="${e.journalId}"` }));
   c.payruns.forEach(r => add({ date: r.date, type: 'payroll', ref: 'PR-' + r.month, desc: `Payroll – ${mLabel(r.month, true)}`, party: `${r.rows.length} ${r.rows.length === 1 ? 'person' : 'people'}`, note: `Gross ${money(r.totals.gross)}`, amount: r.totals.net, dir: 'out', status: 'posted', act: `data-act="view-run" data-m="${r.month}"` }));
   Object.entries(c.filings || {}).forEach(([key, f]) => { const [type, period] = key.split(':'); add({ date: f.date, type: 'tax', ref: f.ref || '', desc: `${type} ${period && period.length === 7 ? 'for ' + mLabel(period, true) : period ? 'for ' + period : ''}`.trim(), party: type === 'PAYE' ? 'State IRS' : type === 'Pension' ? 'Pension fund' : 'NRS (Rev360)', note: '', amount: f.amount || 0, dir: f.amount ? 'out' : 'none', status: 'filed', act: f.journalId ? `data-act="view-journal" data-id="${f.journalId}"` : `data-act="nav" data-r="tax"` }); });
   c.journals.filter(j => JOURNAL_ONLY.includes(j.source)).forEach(j => add({ date: j.date, type: 'journal', ref: j.no, desc: j.memo || SRC_LABEL[j.source] || 'Journal entry', party: j.party || '', note: SRC_LABEL[j.source] || '', amount: r2(j.lines.reduce((s, l) => s + (l.dr || 0), 0)), dir: 'none', status: j.reversedBy ? 'reversed' : 'posted', act: `data-act="view-journal" data-id="${j.id}"`, at: j.at }));
